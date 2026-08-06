@@ -80,12 +80,12 @@ Implemented read-only foundation:
 - `cubemx_list_ioc(root, recursive, limit)`
 - `cubemx_inspect_ioc(path)`
 - `cubemx_plan_ioc_changes(request)`
+- `cubemx_apply_ioc_changes(request)`
 
 Planned configuration and execution tools:
 
 - `cubemx_plan_project(intent, existing_ioc=None)`
 - `cubemx_preview_plan(plan_id)`
-- `cubemx_apply_plan(plan_id, expected_source_sha256)`
 - `cubemx_validate_ioc(path)`
 - `cubemx_generate_project(path, toolchain)`
 - `cubemx_build_project(project_path, configuration)`

@@ -20,6 +20,7 @@ async def test_environment_tool_returns_structured_output() -> None:
     assert "cubemx_list_ioc" in tool_names
     assert "cubemx_inspect_ioc" in tool_names
     assert "cubemx_plan_ioc_changes" in tool_names
+    assert "cubemx_apply_ioc_changes" in tool_names
     assert not result.is_error
     assert result.structured_content is not None
     assert "operating_system" in result.structured_content

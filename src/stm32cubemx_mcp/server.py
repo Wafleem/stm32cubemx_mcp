@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from mcp.server import MCPServer
 
+from stm32cubemx_mcp.apply import apply_ioc_changes
 from stm32cubemx_mcp.discovery import discover_environment
 from stm32cubemx_mcp.ioc import inspect_ioc, list_ioc_files
 from stm32cubemx_mcp.models import (
     EnvironmentReport,
+    IocApplyRequest,
+    IocApplyResult,
     IocChangePlan,
     IocInspection,
     IocListResult,
@@ -18,8 +21,9 @@ mcp = MCPServer(
     "stm32cubemx",
     instructions=(
         "Use this server as the deterministic STM32CubeMX execution layer. "
-        "Interpret datasheets and schematics in the host agent, inspect the environment and IOC "
-        "state first, and never claim that generation or a build occurred from inspection alone."
+        "The host agent must analyze datasheets and schematics. "
+        "Inspect the environment and the IOC state first. "
+        "Do not report generation or build success after an inspection."
     ),
 )
 
@@ -54,6 +58,12 @@ def cubemx_inspect_ioc(path: str) -> IocInspection:
 def cubemx_plan_ioc_changes(request: IocPlanRequest) -> IocChangePlan:
     """Plan pin, peripheral, parameter, and project changes. Do not write a file."""
     return plan_ioc_changes(request, _settings())
+
+
+@mcp.tool()
+def cubemx_apply_ioc_changes(request: IocApplyRequest) -> IocApplyResult:
+    """Apply an approved IOC plan. Create a backup and replace the source file."""
+    return apply_ioc_changes(request, _settings())
 
 
 def main() -> None:

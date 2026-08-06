@@ -25,6 +25,9 @@ also control CubeMX generation and builds.
 - `cubemx_plan_ioc_changes` previews pin, peripheral, parameter, and project
   changes. It returns a content hash and a unified text difference. It does not
   write the `.ioc` file.
+- `cubemx_apply_ioc_changes` applies an approved plan. It checks the source
+  hash. It creates a backup. It replaces the source file with one atomic
+  operation.
 
 ## Intended workflow
 

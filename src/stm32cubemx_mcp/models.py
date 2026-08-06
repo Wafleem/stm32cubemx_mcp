@@ -106,3 +106,22 @@ class IocChangePlan(BaseModel):
     unified_diff: str
     validation_status: Literal["not_run"] = "not_run"
     diagnostics: list[Diagnostic] = Field(default_factory=list)
+
+
+class IocApplyRequest(BaseModel):
+    plan_request: IocPlanRequest
+    expected_source_sha256: str = Field(
+        min_length=64,
+        max_length=64,
+        description="Source hash from the approved IOC change plan.",
+    )
+
+
+class IocApplyResult(BaseModel):
+    plan_id: str
+    path: str
+    backup_path: str | None = None
+    source_sha256: str
+    applied_sha256: str
+    changed: bool
+    changed_keys: list[str] = Field(default_factory=list)

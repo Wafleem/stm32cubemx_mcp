@@ -131,6 +131,12 @@ def load_ioc_document(raw_path: str | Path, settings: Settings) -> tuple[Path, b
     return path, raw, document
 
 
+def encode_ioc_text(text: str, source: bytes) -> bytes:
+    """Encode IOC text and preserve a source UTF-8 byte-order mark."""
+    prefix = b"\xef\xbb\xbf" if source.startswith(b"\xef\xbb\xbf") else b""
+    return prefix + text.encode("utf-8")
+
+
 def _ordered_values(entries: OrderedDict[str, str], pattern: re.Pattern[str]) -> list[str]:
     values: list[str] = []
     seen: set[str] = set()

@@ -6,7 +6,7 @@ import json
 import re
 from collections import OrderedDict
 
-from stm32cubemx_mcp.ioc import load_ioc_document
+from stm32cubemx_mcp.ioc import encode_ioc_text, load_ioc_document
 from stm32cubemx_mcp.models import (
     Diagnostic,
     IocChangePlan,
@@ -52,8 +52,8 @@ def _indexed_values(entries: OrderedDict[str, str], prefix: str) -> list[tuple[i
     return sorted(result)
 
 
-def plan_ioc_changes(request: IocPlanRequest, settings: Settings) -> IocChangePlan:
-    """Create a deterministic IOC change plan. Do not write the source file."""
+def prepare_ioc_changes(request: IocPlanRequest, settings: Settings) -> tuple[IocChangePlan, bytes]:
+    """Create an IOC change plan and the planned file content."""
     path, source, document = load_ioc_document(request.path, settings)
     if any(item.code == "ioc.duplicate_key" for item in document.diagnostics):
         raise ValueError("The IOC file has duplicate keys. Correct them before a change plan.")
@@ -167,7 +167,7 @@ def plan_ioc_changes(request: IocPlanRequest, settings: Settings) -> IocChangePl
         )
     )
     source_sha256 = hashlib.sha256(source).hexdigest()
-    rendered_bytes = rendered.encode("utf-8")
+    rendered_bytes = encode_ioc_text(rendered, source)
     planned_sha256 = hashlib.sha256(rendered_bytes).hexdigest()
     plan_data = {
         "path": str(path),
@@ -195,7 +195,7 @@ def plan_ioc_changes(request: IocPlanRequest, settings: Settings) -> IocChangePl
             message="CubeMX did not validate this plan. Validate the staged IOC.",
         ),
     ]
-    return IocChangePlan(
+    plan = IocChangePlan(
         plan_id=plan_id,
         path=str(path),
         source_sha256=source_sha256,
@@ -204,3 +204,10 @@ def plan_ioc_changes(request: IocPlanRequest, settings: Settings) -> IocChangePl
         unified_diff=diff,
         diagnostics=diagnostics,
     )
+    return plan, rendered_bytes
+
+
+def plan_ioc_changes(request: IocPlanRequest, settings: Settings) -> IocChangePlan:
+    """Create a deterministic IOC change plan. Do not write the source file."""
+    plan, _ = prepare_ioc_changes(request, settings)
+    return plan
