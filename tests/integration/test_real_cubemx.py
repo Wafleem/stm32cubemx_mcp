@@ -1,10 +1,13 @@
 import os
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
 from stm32cubemx_mcp.cubemx import run_cubemx_script, validate_ioc_content
 from stm32cubemx_mcp.discovery import discover_environment
+from stm32cubemx_mcp.generation import generate_project
+from stm32cubemx_mcp.models import IocValidationResult, ProjectGenerationRequest
 from stm32cubemx_mcp.settings import Settings
 
 pytestmark = [
@@ -44,3 +47,28 @@ def test_create_and_validate_nucleo_f401re_ioc(tmp_path: Path) -> None:
     validation = validate_ioc_content(ioc_path, ioc_path.read_bytes(), settings)
     diagnostic_codes = [item.code for item in validation.diagnostics]
     assert validation.valid, diagnostic_codes
+
+    generation_settings = replace(settings, allowed_roots=(tmp_path.resolve(),))
+
+    def use_previous_validation(
+        source_path: Path, content: bytes, active_settings: Settings
+    ) -> IocValidationResult:
+        del source_path, content, active_settings
+        return validation
+
+    generated_path = tmp_path / "generated"
+    generation = generate_project(
+        ProjectGenerationRequest(
+            ioc_path=str(ioc_path),
+            output_directory=str(generated_path),
+            project_name="nucleo_f401re_app",
+        ),
+        generation_settings,
+        validator=use_previous_validation,
+    )
+
+    generation_codes = [item.code for item in generation.diagnostics]
+    assert generation.succeeded, generation_codes
+    assert (generated_path / ".project").is_file()
+    assert (generated_path / ".cproject").is_file()
+    assert any(path.endswith(".ioc") for path in generation.generated_files)

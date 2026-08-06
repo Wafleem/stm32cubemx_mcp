@@ -61,6 +61,20 @@ Generation and building are separate operations. A valid `.ioc` should not
 implicitly overwrite a generated project, and successful generation should not
 be reported as a successful compile.
 
+## New-project generation
+
+The generation tool only accepts a new output directory. It uses this sequence:
+
+```text
+validate IOC -> create staging directory -> copy IOC -> run CubeMX generation
+             -> verify .project and .cproject -> relocate staging paths
+             -> move the complete project to the output directory
+```
+
+The tool removes the staging directory after a failure. It does not change the
+source IOC file. A later checkpoint will define a different transaction for an
+existing generated project.
+
 ## Path and process safety
 
 - All project paths must resolve beneath configured allowed roots.
@@ -82,12 +96,12 @@ Implemented foundation:
 - `cubemx_plan_ioc_changes(request)`
 - `cubemx_apply_ioc_changes(request)`
 - `cubemx_validate_ioc(path)`
+- `cubemx_generate_project(request)`
 
 Planned configuration and execution tools:
 
 - `cubemx_plan_project(intent, existing_ioc=None)`
 - `cubemx_preview_plan(plan_id)`
-- `cubemx_generate_project(path, toolchain)`
 - `cubemx_build_project(project_path, configuration)`
 
 The intent format should describe capabilities rather than immediately forcing

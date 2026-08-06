@@ -5,6 +5,7 @@ from mcp.server import MCPServer
 from stm32cubemx_mcp.apply import apply_ioc_changes
 from stm32cubemx_mcp.cubemx import validate_ioc_file
 from stm32cubemx_mcp.discovery import discover_environment
+from stm32cubemx_mcp.generation import generate_project
 from stm32cubemx_mcp.ioc import inspect_ioc, list_ioc_files
 from stm32cubemx_mcp.models import (
     EnvironmentReport,
@@ -15,6 +16,8 @@ from stm32cubemx_mcp.models import (
     IocListResult,
     IocPlanRequest,
     IocValidationResult,
+    ProjectGenerationRequest,
+    ProjectGenerationResult,
 )
 from stm32cubemx_mcp.planning import plan_ioc_changes
 from stm32cubemx_mcp.settings import Settings
@@ -72,6 +75,12 @@ def cubemx_apply_ioc_changes(request: IocApplyRequest) -> IocApplyResult:
 def cubemx_validate_ioc(path: str) -> IocValidationResult:
     """Load and save an IOC copy with STM32CubeMX. Do not change the source file."""
     return validate_ioc_file(path, _settings())
+
+
+@mcp.tool()
+def cubemx_generate_project(request: ProjectGenerationRequest) -> ProjectGenerationResult:
+    """Generate one new STM32CubeIDE project in a new output directory."""
+    return generate_project(request, _settings())
 
 
 def main() -> None:

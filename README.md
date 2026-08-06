@@ -13,8 +13,9 @@ also control CubeMX generation and builds.
 
 > [!IMPORTANT]
 > The project is in early development. The current tools inspect, plan,
-> validate, and apply `.ioc` changes. Project generation and builds are the next
-> implementation milestones.
+> validate, and apply `.ioc` changes. The tools can also generate a new
+> STM32CubeIDE project. Existing-project regeneration, CMake output, and builds
+> are the next implementation milestones.
 
 ## Current MCP tools
 
@@ -30,6 +31,9 @@ also control CubeMX generation and builds.
   operation.
 - `cubemx_validate_ioc` runs a CubeMX load and save test on a staged copy. It
   checks the required IOC settings after the CubeMX save operation.
+- `cubemx_generate_project` generates a new STM32CubeIDE project. It validates
+  the source IOC file. It generates files in a temporary directory. It moves a
+  complete project to a new output directory.
 
 ## Intended workflow
 

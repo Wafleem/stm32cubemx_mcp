@@ -148,3 +148,26 @@ class IocValidationResult(BaseModel):
     roundtrip_sha256: str | None = None
     cubemx: CubeMXProcessResult
     diagnostics: list[Diagnostic] = Field(default_factory=list)
+
+
+class ProjectGenerationRequest(BaseModel):
+    ioc_path: str
+    output_directory: str
+    project_name: str = Field(
+        min_length=1,
+        max_length=80,
+        pattern=r"^[A-Za-z0-9_.-]+$",
+    )
+    toolchain: Literal["STM32CubeIDE"] = "STM32CubeIDE"
+
+
+class ProjectGenerationResult(BaseModel):
+    succeeded: bool
+    project_path: str
+    project_name: str
+    toolchain: Literal["STM32CubeIDE"]
+    source_sha256: str
+    validation: IocValidationResult
+    cubemx: CubeMXProcessResult | None = None
+    generated_files: list[str] = Field(default_factory=list)
+    diagnostics: list[Diagnostic] = Field(default_factory=list)

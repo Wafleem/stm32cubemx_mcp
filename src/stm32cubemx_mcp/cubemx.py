@@ -83,27 +83,30 @@ def run_cubemx_script(
     creation_flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
     try:
-        completed = subprocess.run(
-            command,
-            cwd=work_directory,
-            stdin=subprocess.DEVNULL,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=settings.cubemx_timeout_seconds,
-            check=False,
-            shell=False,
-            creationflags=creation_flags,
-        )
-    except subprocess.TimeoutExpired as error:
-        return CubeMXProcessResult(
-            succeeded=False,
-            timed_out=True,
-            duration_seconds=time.monotonic() - start,
-            stdout=_limit_output(error.stdout, settings.max_process_output_chars),
-            stderr=_limit_output(error.stderr, settings.max_process_output_chars),
-        )
+        try:
+            completed = subprocess.run(
+                command,
+                cwd=work_directory,
+                stdin=subprocess.DEVNULL,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=settings.cubemx_timeout_seconds,
+                check=False,
+                shell=False,
+                creationflags=creation_flags,
+            )
+        except subprocess.TimeoutExpired as error:
+            return CubeMXProcessResult(
+                succeeded=False,
+                timed_out=True,
+                duration_seconds=time.monotonic() - start,
+                stdout=_limit_output(error.stdout, settings.max_process_output_chars),
+                stderr=_limit_output(error.stderr, settings.max_process_output_chars),
+            )
+    finally:
+        script_path.unlink(missing_ok=True)
 
     return CubeMXProcessResult(
         succeeded=completed.returncode == 0,
