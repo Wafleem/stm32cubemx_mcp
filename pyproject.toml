@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "stm32cubemx-mcp"
+version = "0.1.0"
+description = "An MCP server for safe, agent-driven STM32CubeMX workflows"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [
+  { name = "stm32cubemx-mcp contributors" },
+]
+keywords = ["stm32", "stm32cubemx", "embedded", "mcp", "model-context-protocol"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: Microsoft :: Windows",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Embedded Systems",
+]
+dependencies = [
+  "mcp[cli]>=2.0,<3",
+  "pydantic>=2.11,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9",
+  "pytest-cov>=6,<7",
+  "ruff>=0.12,<1",
+]
+
+[project.scripts]
+stm32cubemx-mcp = "stm32cubemx_mcp.server:main"
+
+[project.urls]
+Documentation = "https://github.com/OWNER/stm32cubemx-mcp#readme"
+Issues = "https://github.com/OWNER/stm32cubemx-mcp/issues"
+Source = "https://github.com/OWNER/stm32cubemx-mcp"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/stm32cubemx_mcp"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-config --strict-markers"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
