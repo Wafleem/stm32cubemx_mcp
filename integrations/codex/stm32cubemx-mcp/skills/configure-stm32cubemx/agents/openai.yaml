@@ -1,0 +1,4 @@
+interface:
+  display_name: "Configure STM32CubeMX"
+  short_description: "Plan and validate STM32CubeMX project changes"
+  default_prompt: "Use $configure-stm32cubemx to inspect this STM32 project and plan the requested configuration changes safely."

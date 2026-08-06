@@ -16,9 +16,11 @@ def test_codex_plugin_registers_installed_mcp_command() -> None:
     mcp_config = _json(CODEX_PLUGIN / ".mcp.json")
 
     assert manifest["name"] == "stm32cubemx-mcp"
+    assert manifest["skills"] == "./skills/"
     assert manifest["mcpServers"] == "./.mcp.json"
     assert mcp_config["mcpServers"]["stm32cubemx"]["command"] == "stm32cubemx-mcp"
     assert (CODEX_PLUGIN / "LICENSE").is_file()
+    assert (CODEX_PLUGIN / "skills" / "configure-stm32cubemx" / "SKILL.md").is_file()
 
 
 def test_python_package_supplies_plugin_command() -> None:
