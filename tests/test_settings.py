@@ -22,6 +22,15 @@ def test_environment_roots_use_os_path_separator(tmp_path: Path) -> None:
     assert settings.allowed_roots == (first.resolve(), second.resolve())
 
 
+def test_environment_can_enable_unvalidated_apply(tmp_path: Path) -> None:
+    settings = Settings.from_env(
+        {"CUBEMX_MCP_ALLOW_UNVALIDATED_APPLY": "true"},
+        cwd=tmp_path,
+    )
+
+    assert settings.allow_unvalidated_apply
+
+
 def test_path_outside_allowed_root_is_rejected(tmp_path: Path) -> None:
     allowed = tmp_path / "allowed"
     allowed.mkdir()

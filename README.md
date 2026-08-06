@@ -28,6 +28,8 @@ also control CubeMX generation and builds.
 - `cubemx_apply_ioc_changes` applies an approved plan. It checks the source
   hash. It creates a backup. It replaces the source file with one atomic
   operation.
+- `cubemx_validate_ioc` runs a CubeMX load and save test on a staged copy. It
+  checks the required IOC settings after the CubeMX save operation.
 
 ## Intended workflow
 
@@ -95,6 +97,8 @@ Environment variable | Purpose
 `CUBEMX_MCP_CUBEMX_PATH` | Explicit CubeMX launcher path
 `CUBEMX_MCP_ALLOWED_ROOTS` | OS-path-separated project roots the MCP may read or change
 `CUBEMX_MCP_MAX_IOC_BYTES` | Maximum `.ioc` size accepted; defaults to 5 MiB
+`CUBEMX_MCP_CUBEMX_TIMEOUT_SECONDS` | Maximum CubeMX operation time; defaults to 120 seconds
+`CUBEMX_MCP_ALLOW_UNVALIDATED_APPLY` | Permit an explicit validation bypass; defaults to false
 
 When `CUBEMX_MCP_ALLOWED_ROOTS` is unset, access is restricted to the process's
 current working directory. This default is deliberately narrow.

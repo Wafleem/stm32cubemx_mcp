@@ -115,6 +115,10 @@ class IocApplyRequest(BaseModel):
         max_length=64,
         description="Source hash from the approved IOC change plan.",
     )
+    skip_cubemx_validation: bool = Field(
+        default=False,
+        description="Skip CubeMX validation. The server must permit this bypass.",
+    )
 
 
 class IocApplyResult(BaseModel):
@@ -124,4 +128,23 @@ class IocApplyResult(BaseModel):
     source_sha256: str
     applied_sha256: str
     changed: bool
+    cubemx_validated: bool
     changed_keys: list[str] = Field(default_factory=list)
+
+
+class CubeMXProcessResult(BaseModel):
+    succeeded: bool
+    exit_code: int | None = None
+    timed_out: bool = False
+    duration_seconds: float
+    stdout: str = ""
+    stderr: str = ""
+
+
+class IocValidationResult(BaseModel):
+    path: str
+    valid: bool
+    source_sha256: str
+    roundtrip_sha256: str | None = None
+    cubemx: CubeMXProcessResult
+    diagnostics: list[Diagnostic] = Field(default_factory=list)

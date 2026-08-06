@@ -5,11 +5,25 @@ import os
 import shutil
 import stat
 import tempfile
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Protocol
 
-from stm32cubemx_mcp.models import IocApplyRequest, IocApplyResult
+from stm32cubemx_mcp.cubemx import validate_ioc_content
+from stm32cubemx_mcp.models import IocApplyRequest, IocApplyResult, IocValidationResult
 from stm32cubemx_mcp.planning import prepare_ioc_changes
 from stm32cubemx_mcp.settings import Settings
+
+
+class IocValidator(Protocol):
+    def __call__(
+        self,
+        source_path: Path,
+        content: bytes,
+        settings: Settings,
+        *,
+        required_entries: Mapping[str, str],
+    ) -> IocValidationResult: ...
 
 
 def _sha256(path: Path) -> str:
@@ -48,7 +62,12 @@ def _atomic_replace(path: Path, content: bytes) -> None:
             temporary_path.unlink(missing_ok=True)
 
 
-def apply_ioc_changes(request: IocApplyRequest, settings: Settings) -> IocApplyResult:
+def apply_ioc_changes(
+    request: IocApplyRequest,
+    settings: Settings,
+    *,
+    validator: IocValidator = validate_ioc_content,
+) -> IocApplyResult:
     """Apply an approved IOC plan with a backup and an atomic replacement."""
     plan, content = prepare_ioc_changes(request.plan_request, settings)
     expected = request.expected_source_sha256.lower()
@@ -65,12 +84,33 @@ def apply_ioc_changes(request: IocApplyRequest, settings: Settings) -> IocApplyR
             source_sha256=plan.source_sha256,
             applied_sha256=plan.source_sha256,
             changed=False,
+            cubemx_validated=False,
         )
+
+    if request.skip_cubemx_validation:
+        if not settings.allow_unvalidated_apply:
+            raise PermissionError(
+                "The server does not permit unvalidated IOC changes. "
+                "Set CUBEMX_MCP_ALLOW_UNVALIDATED_APPLY to true for this bypass."
+            )
+        cubemx_validated = False
+    else:
+        validation = validator(
+            path,
+            content,
+            settings,
+            required_entries={change.key: change.after for change in plan.changes},
+        )
+        if not validation.valid:
+            codes = ", ".join(item.code for item in validation.diagnostics)
+            raise ValueError(f"STM32CubeMX rejected the planned IOC content. Diagnostics: {codes}")
+        cubemx_validated = True
 
     backup = _create_backup(path, plan.source_sha256)
     _atomic_replace(path, content)
     applied_sha256 = _sha256(path)
     if applied_sha256 != plan.planned_sha256:
+        _atomic_replace(path, backup.read_bytes())
         raise OSError("The applied IOC hash is not equal to the approved plan hash.")
 
     return IocApplyResult(
@@ -80,5 +120,6 @@ def apply_ioc_changes(request: IocApplyRequest, settings: Settings) -> IocApplyR
         source_sha256=plan.source_sha256,
         applied_sha256=applied_sha256,
         changed=True,
+        cubemx_validated=cubemx_validated,
         changed_keys=[change.key for change in plan.changes],
     )
