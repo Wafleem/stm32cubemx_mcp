@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "stm32cubemx": {
+      "command": "stm32cubemx-mcp",
+      "env": {
+        "CUBEMX_MCP_CUBEMX_TIMEOUT_SECONDS": "240"
+      }
+    }
+  }
+}

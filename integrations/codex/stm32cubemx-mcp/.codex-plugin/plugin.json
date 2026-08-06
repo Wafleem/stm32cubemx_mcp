@@ -1,0 +1,25 @@
+{
+  "name": "stm32cubemx-mcp",
+  "version": "0.1.0",
+  "description": "Use safe STM32CubeMX IOC and project tools from Codex.",
+  "author": {
+    "name": "stm32cubemx-mcp contributors"
+  },
+  "license": "MIT",
+  "keywords": ["stm32", "stm32cubemx", "embedded", "ioc", "mcp"],
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "STM32CubeMX MCP",
+    "shortDescription": "Inspect, plan, validate, and generate STM32 projects.",
+    "longDescription": "Connect Codex to a local STM32CubeMX installation. Inspect IOC files, preview pin changes, validate configurations, and generate STM32CubeIDE projects.",
+    "developerName": "stm32cubemx-mcp contributors",
+    "category": "Developer Tools",
+    "capabilities": ["Interactive", "Write"],
+    "defaultPrompt": [
+      "Inspect my STM32 IOC file and explain its configuration.",
+      "Plan a safe STM32 pin and peripheral change.",
+      "Validate and generate my STM32CubeIDE project."
+    ],
+    "brandColor": "#03234B"
+  }
+}
