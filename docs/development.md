@@ -33,6 +33,13 @@ They are opt-in locally and should run on a controlled self-hosted CI runner,
 because STM32 packages are large and installation/licensing must remain outside
 ordinary unit CI.
 
+Run the installed CubeMX integration test on Windows with:
+
+```powershell
+$env:CUBEMX_MCP_RUN_INTEGRATION = "1"
+pytest tests/integration/test_real_cubemx.py -m integration
+```
+
 ### Build tests
 
 Generated STM32CubeIDE projects are built through the IDE's headless interface.

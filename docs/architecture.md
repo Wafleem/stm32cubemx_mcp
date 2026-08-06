@@ -74,7 +74,7 @@ be reported as a successful compile.
 
 ## Tool contract
 
-Implemented read-only foundation:
+Implemented foundation:
 
 - `cubemx_environment()`
 - `cubemx_list_ioc(root, recursive, limit)`

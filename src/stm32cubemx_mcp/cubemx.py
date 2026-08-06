@@ -35,7 +35,7 @@ def build_validation_script(input_path: Path, output_path: Path) -> list[str]:
     """Build the CubeMX commands for an IOC load and save test."""
     return [
         f"config load {_script_path(input_path)}",
-        f"config save {_script_path(output_path)}",
+        f"config saveas {_script_path(output_path)}",
         "exit",
     ]
 
@@ -52,7 +52,12 @@ def _limit_output(text: str | None, limit: int) -> str:
     if len(value) <= limit:
         return value
     removed = len(value) - limit
-    return f"{value[:limit]}\n[Output truncated. Removed {removed} characters.]"
+    head_size = limit // 4
+    tail_size = limit - head_size
+    return (
+        f"{value[:head_size]}\n[Output truncated. Removed {removed} characters.]\n"
+        f"{value[-tail_size:]}"
+    )
 
 
 def run_cubemx_script(

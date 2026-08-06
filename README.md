@@ -12,9 +12,9 @@ toolchain and `.ioc` files. It validates paths and configuration state. It will
 also control CubeMX generation and builds.
 
 > [!IMPORTANT]
-> The project is at an early scaffold stage. The current tools are read-only.
-> Transactional `.ioc` planning, CubeMX validation, project generation, and
-> builds are the next implementation milestones.
+> The project is in early development. The current tools inspect, plan,
+> validate, and apply `.ioc` changes. Project generation and builds are the next
+> implementation milestones.
 
 ## Current MCP tools
 

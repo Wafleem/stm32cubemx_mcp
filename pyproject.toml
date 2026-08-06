@@ -49,6 +49,9 @@ packages = ["src/stm32cubemx_mcp"]
 addopts = "-ra --strict-config --strict-markers"
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+  "integration: requires installed STM32 tools and can take more than one minute",
+]
 
 [tool.ruff]
 line-length = 100
@@ -56,4 +59,3 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
-

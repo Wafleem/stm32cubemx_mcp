@@ -56,7 +56,7 @@ def test_build_validation_script_quotes_paths(tmp_path: Path) -> None:
 
     assert commands == [
         f'config load "{input_path}"',
-        f'config save "{output_path}"',
+        f'config saveas "{output_path}"',
         "exit",
     ]
 

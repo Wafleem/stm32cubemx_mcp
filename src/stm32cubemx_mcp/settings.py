@@ -12,7 +12,7 @@ class Settings:
     cubemx_path: Path | None = None
     max_ioc_bytes: int = 5 * 1024 * 1024
     cubemx_timeout_seconds: float = 120.0
-    max_process_output_chars: int = 200_000
+    max_process_output_chars: int = 20_000
     allow_unvalidated_apply: bool = False
 
     @classmethod
