@@ -39,9 +39,9 @@ dev = [
 stm32cubemx-mcp = "stm32cubemx_mcp.server:main"
 
 [project.urls]
-Documentation = "https://github.com/OWNER/stm32cubemx-mcp#readme"
-Issues = "https://github.com/OWNER/stm32cubemx-mcp/issues"
-Source = "https://github.com/OWNER/stm32cubemx-mcp"
+Documentation = "https://github.com/Wafleem/stm32cubemx_mcp#readme"
+Issues = "https://github.com/Wafleem/stm32cubemx_mcp/issues"
+Source = "https://github.com/Wafleem/stm32cubemx_mcp"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/stm32cubemx_mcp"]

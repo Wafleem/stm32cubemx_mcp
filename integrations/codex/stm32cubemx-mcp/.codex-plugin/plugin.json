@@ -3,8 +3,11 @@
   "version": "0.1.0",
   "description": "Use safe STM32CubeMX IOC and project tools from Codex.",
   "author": {
-    "name": "stm32cubemx-mcp contributors"
+    "name": "stm32cubemx-mcp contributors",
+    "url": "https://github.com/Wafleem"
   },
+  "homepage": "https://github.com/Wafleem/stm32cubemx_mcp#readme",
+  "repository": "https://github.com/Wafleem/stm32cubemx_mcp",
   "license": "MIT",
   "keywords": ["stm32", "stm32cubemx", "embedded", "ioc", "mcp"],
   "skills": "./skills/",
@@ -16,6 +19,7 @@
     "developerName": "stm32cubemx-mcp contributors",
     "category": "Developer Tools",
     "capabilities": ["Interactive", "Write"],
+    "websiteURL": "https://github.com/Wafleem/stm32cubemx_mcp",
     "defaultPrompt": [
       "Inspect my STM32 IOC file and explain its configuration.",
       "Plan a safe STM32 pin and peripheral change.",
