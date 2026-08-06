@@ -35,6 +35,7 @@ def build_validation_script(input_path: Path, output_path: Path) -> list[str]:
     """Build the CubeMX commands for an IOC load and save test."""
     return [
         f"config load {_script_path(input_path)}",
+        f"project path {_script_path(output_path.parent)}",
         f"config saveas {_script_path(output_path)}",
         "exit",
     ]
@@ -78,14 +79,13 @@ def run_cubemx_script(
     script_path = work_directory / "commands.mxscript"
     script_path.write_text("\n".join(commands) + "\n", encoding="utf-8")
     command = build_cubemx_command(executable, script_path)
-    process_directory = Path(executable.path).parent if executable.path else work_directory
     start = time.monotonic()
     creation_flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
     try:
         completed = subprocess.run(
             command,
-            cwd=process_directory,
+            cwd=work_directory,
             stdin=subprocess.DEVNULL,
             capture_output=True,
             text=True,
@@ -189,6 +189,22 @@ def validate_ioc_content(
                     severity="error",
                     code="cubemx.process_failed",
                     message="STM32CubeMX did not complete the IOC validation script.",
+                )
+            )
+            return IocValidationResult(
+                path=str(source_path),
+                valid=False,
+                source_sha256=source_sha256,
+                cubemx=process,
+                diagnostics=diagnostics,
+            )
+        ok_responses = len(re.findall(r"(?m)^\s*OK\s*$", process.stdout))
+        if ok_responses < 2:
+            diagnostics.append(
+                Diagnostic(
+                    severity="error",
+                    code="cubemx.script_response_missing",
+                    message="STM32CubeMX did not confirm both validation commands.",
                 )
             )
             return IocValidationResult(

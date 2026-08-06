@@ -20,8 +20,13 @@ def _copy_runner(
     commands: list[str], settings: Settings, work_directory: Path
 ) -> CubeMXProcessResult:
     del settings, work_directory
-    shutil.copy2(_path_from_script_command(commands[0]), _path_from_script_command(commands[1]))
-    return CubeMXProcessResult(succeeded=True, exit_code=0, duration_seconds=0.01)
+    shutil.copy2(_path_from_script_command(commands[0]), _path_from_script_command(commands[2]))
+    return CubeMXProcessResult(
+        succeeded=True,
+        exit_code=0,
+        duration_seconds=0.01,
+        stdout="OK\nOK\n",
+    )
 
 
 def _mismatch_runner(
@@ -30,8 +35,13 @@ def _mismatch_runner(
     del settings, work_directory
     source = _path_from_script_command(commands[0]).read_text(encoding="utf-8")
     output = source.replace("PA5.Signal=GPIO_Output", "PA5.Signal=GPIO_Input")
-    _path_from_script_command(commands[1]).write_text(output, encoding="utf-8")
-    return CubeMXProcessResult(succeeded=True, exit_code=0, duration_seconds=0.01)
+    _path_from_script_command(commands[2]).write_text(output, encoding="utf-8")
+    return CubeMXProcessResult(
+        succeeded=True,
+        exit_code=0,
+        duration_seconds=0.01,
+        stdout="OK\nOK\n",
+    )
 
 
 def test_build_cubemx_command_uses_quiet_script_mode(tmp_path: Path) -> None:
@@ -56,6 +66,7 @@ def test_build_validation_script_quotes_paths(tmp_path: Path) -> None:
 
     assert commands == [
         f'config load "{input_path}"',
+        f'project path "{tmp_path}"',
         f'config saveas "{output_path}"',
         "exit",
     ]
