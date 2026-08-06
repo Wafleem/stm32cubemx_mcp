@@ -3,8 +3,9 @@ import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
-CODEX_PLUGIN = ROOT / "integrations" / "codex" / "stm32cubemx-mcp"
+CODEX_PLUGIN = ROOT / "plugins" / "stm32cubemx-mcp"
 CLAUDE_PLUGIN = ROOT / "integrations" / "claude" / "stm32cubemx-mcp"
+CODEX_MARKETPLACE = ROOT / ".agents" / "plugins" / "marketplace.json"
 
 
 def _json(path: Path) -> dict[str, object]:
@@ -21,6 +22,22 @@ def test_codex_plugin_registers_installed_mcp_command() -> None:
     assert mcp_config["mcpServers"]["stm32cubemx"]["command"] == "stm32cubemx-mcp"
     assert (CODEX_PLUGIN / "LICENSE").is_file()
     assert (CODEX_PLUGIN / "skills" / "configure-stm32cubemx" / "SKILL.md").is_file()
+
+
+def test_codex_marketplace_points_to_plugin_package() -> None:
+    marketplace = _json(CODEX_MARKETPLACE)
+    entry = marketplace["plugins"][0]
+
+    assert marketplace["name"] == "wafleem-stm32"
+    assert entry["name"] == "stm32cubemx-mcp"
+    assert entry["source"] == {
+        "source": "local",
+        "path": "./plugins/stm32cubemx-mcp",
+    }
+    assert entry["policy"] == {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL",
+    }
 
 
 def test_python_package_supplies_plugin_command() -> None:

@@ -4,6 +4,23 @@ This unofficial plugin connects Codex to the local `stm32cubemx-mcp` server.
 The plugin does not contain STM32CubeMX. Install STM32CubeMX and the Python MCP
 package before you enable the plugin.
 
+## Installation
+
+Install the Python MCP command:
+
+```powershell
+pipx install git+https://github.com/Wafleem/stm32cubemx_mcp.git
+```
+
+Add the marketplace and plugin:
+
+```powershell
+codex plugin marketplace add Wafleem/stm32cubemx_mcp
+codex plugin add stm32cubemx-mcp@wafleem-stm32
+```
+
+Start a new Codex task. Use `/mcp` to check the `stm32cubemx` connection.
+
 ## Development installation
 
 From the root of the `stm32cubemx-mcp` repository, install the Python command

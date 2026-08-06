@@ -1,0 +1,20 @@
+{
+  "name": "wafleem-stm32",
+  "interface": {
+    "displayName": "Wafleem Stm32"
+  },
+  "plugins": [
+    {
+      "name": "stm32cubemx-mcp",
+      "source": {
+        "source": "local",
+        "path": "./plugins/stm32cubemx-mcp"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

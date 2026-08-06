@@ -60,6 +60,26 @@ and generation authority.
 See [Architecture](docs/architecture.md) for the safety model and planned tool
 contract.
 
+## Codex plugin
+
+This repository is an unofficial Codex plugin marketplace. Install the Python
+MCP command first:
+
+```powershell
+pipx install git+https://github.com/Wafleem/stm32cubemx_mcp.git
+```
+
+Then add the marketplace and plugin:
+
+```powershell
+codex plugin marketplace add Wafleem/stm32cubemx_mcp
+codex plugin add stm32cubemx-mcp@wafleem-stm32
+```
+
+Start a new Codex task after installation. Use `/mcp` to confirm that the
+`stm32cubemx` server is connected. The plugin source is in
+[`plugins/stm32cubemx-mcp`](plugins/stm32cubemx-mcp).
+
 ## Requirements
 
 - Python 3.11 or newer
