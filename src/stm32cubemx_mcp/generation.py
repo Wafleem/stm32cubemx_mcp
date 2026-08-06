@@ -53,7 +53,7 @@ def _project_root(stage: Path) -> Path | None:
     return candidates.pop()
 
 
-def _relocate_text_paths(project_root: Path, stage: Path, destination: Path) -> None:
+def relocate_text_paths(project_root: Path, source_root: Path, destination: Path) -> None:
     text_names = {"CMakeLists.txt"}
     text_suffixes = {
         ".cproject",
@@ -64,7 +64,7 @@ def _relocate_text_paths(project_root: Path, stage: Path, destination: Path) -> 
         ".project",
         ".txt",
     }
-    stage_forms = {str(stage), stage.as_posix()}
+    stage_forms = {str(source_root), source_root.as_posix()}
     destination_forms = {str(destination), destination.as_posix()}
     replacements = list(zip(sorted(stage_forms), sorted(destination_forms), strict=True))
 
@@ -179,7 +179,7 @@ def generate_project(
 
         if not any(project_root.glob("*.ioc")):
             shutil.copy2(staged_ioc, project_root / staged_ioc.name)
-        _relocate_text_paths(project_root, stage, destination)
+        relocate_text_paths(project_root, stage, destination)
         if project_root == stage:
             stage.replace(destination)
         else:

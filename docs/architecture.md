@@ -72,8 +72,23 @@ validate IOC -> create staging directory -> copy IOC -> run CubeMX generation
 ```
 
 The tool removes the staging directory after a failure. It does not change the
-source IOC file. A later checkpoint will define a different transaction for an
-existing generated project.
+source IOC file.
+
+## Existing-project regeneration preview
+
+The preview tool creates content manifests before and after staged regeneration.
+Each manifest contains the relative path, file size, and SHA-256 hash. The tool
+uses this sequence:
+
+```text
+scan source -> validate IOC -> copy project -> regenerate copy
+            -> restore source path references -> scan copy -> compare files
+            -> confirm source did not change -> return plan -> remove copy
+```
+
+The tool does not copy build-output directories or Git metadata. It rejects
+symbolic links and Windows reparse points. It also applies configurable file
+count and project size limits.
 
 ## Path and process safety
 
@@ -97,6 +112,7 @@ Implemented foundation:
 - `cubemx_apply_ioc_changes(request)`
 - `cubemx_validate_ioc(path)`
 - `cubemx_generate_project(request)`
+- `cubemx_plan_regeneration(request)`
 
 Planned configuration and execution tools:
 

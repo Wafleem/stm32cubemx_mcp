@@ -31,6 +31,19 @@ def test_environment_can_enable_unvalidated_apply(tmp_path: Path) -> None:
     assert settings.allow_unvalidated_apply
 
 
+def test_environment_sets_project_scan_limits(tmp_path: Path) -> None:
+    settings = Settings.from_env(
+        {
+            "CUBEMX_MCP_MAX_PROJECT_FILES": "123",
+            "CUBEMX_MCP_MAX_PROJECT_BYTES": "456",
+        },
+        cwd=tmp_path,
+    )
+
+    assert settings.max_project_files == 123
+    assert settings.max_project_bytes == 456
+
+
 def test_path_outside_allowed_root_is_rejected(tmp_path: Path) -> None:
     allowed = tmp_path / "allowed"
     allowed.mkdir()

@@ -7,7 +7,12 @@ import pytest
 from stm32cubemx_mcp.cubemx import run_cubemx_script, validate_ioc_content
 from stm32cubemx_mcp.discovery import discover_environment
 from stm32cubemx_mcp.generation import generate_project
-from stm32cubemx_mcp.models import IocValidationResult, ProjectGenerationRequest
+from stm32cubemx_mcp.models import (
+    IocValidationResult,
+    ProjectGenerationRequest,
+    RegenerationPlanRequest,
+)
+from stm32cubemx_mcp.regeneration import plan_project_regeneration, snapshot_project
 from stm32cubemx_mcp.settings import Settings
 
 pytestmark = [
@@ -72,3 +77,16 @@ def test_create_and_validate_nucleo_f401re_ioc(tmp_path: Path) -> None:
     assert (generated_path / ".project").is_file()
     assert (generated_path / ".cproject").is_file()
     assert any(path.endswith(".ioc") for path in generation.generated_files)
+
+    source_before = snapshot_project(generated_path, generation_settings)
+    regeneration = plan_project_regeneration(
+        RegenerationPlanRequest(project_directory=str(generated_path)),
+        generation_settings,
+        validator=use_previous_validation,
+    )
+
+    assert regeneration.cubemx.succeeded
+    assert regeneration.source_manifest_sha256
+    assert regeneration.planned_manifest_sha256
+    assert snapshot_project(generated_path, generation_settings) == source_before
+    assert not list(tmp_path.glob(".*-regeneration-*"))

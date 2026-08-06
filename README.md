@@ -13,9 +13,9 @@ also control CubeMX generation and builds.
 
 > [!IMPORTANT]
 > The project is in early development. The current tools inspect, plan,
-> validate, and apply `.ioc` changes. The tools can also generate a new
-> STM32CubeIDE project. Existing-project regeneration, CMake output, and builds
-> are the next implementation milestones.
+> validate, and apply `.ioc` changes. The tools can generate a new
+> STM32CubeIDE project. They can also preview regeneration of an existing
+> project. CMake output and builds are the next implementation milestones.
 
 ## Current MCP tools
 
@@ -34,6 +34,9 @@ also control CubeMX generation and builds.
 - `cubemx_generate_project` generates a new STM32CubeIDE project. It validates
   the source IOC file. It generates files in a temporary directory. It moves a
   complete project to a new output directory.
+- `cubemx_plan_regeneration` regenerates a temporary copy of an existing
+  STM32CubeIDE project. It returns added, modified, and deleted files. It does
+  not change the source project.
 
 ## Intended workflow
 
@@ -101,6 +104,8 @@ Environment variable | Purpose
 `CUBEMX_MCP_CUBEMX_PATH` | Explicit CubeMX launcher path
 `CUBEMX_MCP_ALLOWED_ROOTS` | OS-path-separated project roots the MCP may read or change
 `CUBEMX_MCP_MAX_IOC_BYTES` | Maximum `.ioc` size accepted; defaults to 5 MiB
+`CUBEMX_MCP_MAX_PROJECT_FILES` | Maximum project file count; defaults to 20,000
+`CUBEMX_MCP_MAX_PROJECT_BYTES` | Maximum project size; defaults to 500 MiB
 `CUBEMX_MCP_CUBEMX_TIMEOUT_SECONDS` | Maximum CubeMX operation time; defaults to 120 seconds
 `CUBEMX_MCP_ALLOW_UNVALIDATED_APPLY` | Permit an explicit validation bypass; defaults to false
 

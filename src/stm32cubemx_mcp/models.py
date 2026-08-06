@@ -171,3 +171,30 @@ class ProjectGenerationResult(BaseModel):
     cubemx: CubeMXProcessResult | None = None
     generated_files: list[str] = Field(default_factory=list)
     diagnostics: list[Diagnostic] = Field(default_factory=list)
+
+
+class RegenerationPlanRequest(BaseModel):
+    project_directory: str
+    ioc_path: str | None = None
+
+
+class ProjectFileChange(BaseModel):
+    path: str
+    change: Literal["added", "modified", "deleted"]
+    before_sha256: str | None = None
+    after_sha256: str | None = None
+    before_size: int | None = None
+    after_size: int | None = None
+    unified_diff: str | None = None
+
+
+class RegenerationPlanResult(BaseModel):
+    plan_id: str
+    project_path: str
+    ioc_path: str
+    source_manifest_sha256: str
+    planned_manifest_sha256: str
+    changes: list[ProjectFileChange]
+    validation: IocValidationResult
+    cubemx: CubeMXProcessResult
+    diagnostics: list[Diagnostic] = Field(default_factory=list)

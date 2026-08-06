@@ -18,8 +18,11 @@ from stm32cubemx_mcp.models import (
     IocValidationResult,
     ProjectGenerationRequest,
     ProjectGenerationResult,
+    RegenerationPlanRequest,
+    RegenerationPlanResult,
 )
 from stm32cubemx_mcp.planning import plan_ioc_changes
+from stm32cubemx_mcp.regeneration import plan_project_regeneration
 from stm32cubemx_mcp.settings import Settings
 
 mcp = MCPServer(
@@ -81,6 +84,14 @@ def cubemx_validate_ioc(path: str) -> IocValidationResult:
 def cubemx_generate_project(request: ProjectGenerationRequest) -> ProjectGenerationResult:
     """Generate one new STM32CubeIDE project in a new output directory."""
     return generate_project(request, _settings())
+
+
+@mcp.tool()
+def cubemx_plan_regeneration(
+    request: RegenerationPlanRequest,
+) -> RegenerationPlanResult:
+    """Regenerate a temporary project copy. Return a read-only file change plan."""
+    return plan_project_regeneration(request, _settings())
 
 
 def main() -> None:

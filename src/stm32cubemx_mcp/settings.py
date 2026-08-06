@@ -14,6 +14,8 @@ class Settings:
     cubemx_timeout_seconds: float = 120.0
     max_process_output_chars: int = 20_000
     allow_unvalidated_apply: bool = False
+    max_project_files: int = 20_000
+    max_project_bytes: int = 500 * 1024 * 1024
 
     @classmethod
     def from_env(
@@ -50,12 +52,19 @@ class Settings:
         if bypass_value not in {"true", "false", "1", "0"}:
             raise ValueError("CUBEMX_MCP_ALLOW_UNVALIDATED_APPLY must be true or false")
 
+        max_project_files = int(values.get("CUBEMX_MCP_MAX_PROJECT_FILES", "20000"))
+        max_project_bytes = int(values.get("CUBEMX_MCP_MAX_PROJECT_BYTES", str(500 * 1024 * 1024)))
+        if max_project_files <= 0 or max_project_bytes <= 0:
+            raise ValueError("Project scan limits must be positive integers")
+
         return cls(
             allowed_roots=roots,
             cubemx_path=cubemx_path,
             max_ioc_bytes=max_ioc_bytes,
             cubemx_timeout_seconds=timeout,
             allow_unvalidated_apply=bypass_value in {"true", "1"},
+            max_project_files=max_project_files,
+            max_project_bytes=max_project_bytes,
         )
 
     def resolve_allowed_path(self, raw_path: str | Path, *, must_exist: bool = True) -> Path:
