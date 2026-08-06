@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "stm32cubemx": {
+      "command": "stm32cubemx-mcp",
+      "cwd": "${CLAUDE_PROJECT_DIR}",
+      "env": {
+        "CUBEMX_MCP_ALLOWED_ROOTS": "${user_config.allowed_root}",
+        "CUBEMX_MCP_CUBEMX_TIMEOUT_SECONDS": "240"
+      }
+    }
+  }
+}

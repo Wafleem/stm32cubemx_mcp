@@ -1,0 +1,19 @@
+{
+  "name": "stm32cubemx-mcp",
+  "version": "0.1.0",
+  "description": "Use safe STM32CubeMX IOC and project tools from Claude Code.",
+  "author": {
+    "name": "stm32cubemx-mcp contributors"
+  },
+  "license": "MIT",
+  "keywords": ["stm32", "stm32cubemx", "embedded", "ioc", "mcp"],
+  "mcpServers": "./.mcp.json",
+  "userConfig": {
+    "allowed_root": {
+      "type": "directory",
+      "title": "Allowed STM32 project directory",
+      "description": "The MCP can read or change files only below this directory.",
+      "required": true
+    }
+  }
+}

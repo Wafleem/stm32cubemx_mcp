@@ -4,6 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
 CODEX_PLUGIN = ROOT / "integrations" / "codex" / "stm32cubemx-mcp"
+CLAUDE_PLUGIN = ROOT / "integrations" / "claude" / "stm32cubemx-mcp"
 
 
 def _json(path: Path) -> dict[str, object]:
@@ -24,3 +25,16 @@ def test_python_package_supplies_plugin_command() -> None:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
     assert project["project"]["scripts"]["stm32cubemx-mcp"] == ("stm32cubemx_mcp.server:main")
+
+
+def test_claude_plugin_registers_installed_mcp_command() -> None:
+    manifest = _json(CLAUDE_PLUGIN / ".claude-plugin" / "plugin.json")
+    mcp_config = _json(CLAUDE_PLUGIN / ".mcp.json")
+
+    assert manifest["name"] == "stm32cubemx-mcp"
+    assert manifest["mcpServers"] == "./.mcp.json"
+    assert manifest["userConfig"]["allowed_root"]["type"] == "directory"
+    server = mcp_config["mcpServers"]["stm32cubemx"]
+    assert server["command"] == "stm32cubemx-mcp"
+    assert server["env"]["CUBEMX_MCP_ALLOWED_ROOTS"] == "${user_config.allowed_root}"
+    assert (CLAUDE_PLUGIN / "LICENSE").is_file()
