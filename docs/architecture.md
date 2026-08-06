@@ -79,6 +79,7 @@ Implemented read-only foundation:
 - `cubemx_environment()`
 - `cubemx_list_ioc(root, recursive, limit)`
 - `cubemx_inspect_ioc(path)`
+- `cubemx_plan_ioc_changes(request)`
 
 Planned configuration and execution tools:
 
@@ -105,4 +106,3 @@ The first end-to-end fixture will target an STM32F4 Nucleo board and exercise:
 - one UART with optional DMA;
 - STM32CubeIDE generation and build;
 - CMake generation as the second build path.
-

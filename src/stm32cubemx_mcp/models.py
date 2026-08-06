@@ -71,3 +71,38 @@ class IocListResult(BaseModel):
     root: str
     files: list[IocFile]
     truncated: bool = False
+
+
+class IocPinAssignment(BaseModel):
+    pin: str = Field(description="MCU pin name, such as PA2.")
+    signal: str = Field(description="CubeMX signal name, such as USART2_TX.")
+    label: str | None = Field(default=None, description="Optional GPIO label.")
+    locked: bool = Field(default=True, description="Lock the pin assignment in CubeMX.")
+
+
+class IocPlanRequest(BaseModel):
+    path: str
+    pin_assignments: list[IocPinAssignment] = Field(default_factory=list)
+    enabled_peripherals: list[str] = Field(default_factory=list)
+    parameter_updates: dict[str, str] = Field(default_factory=dict)
+    project_name: str | None = None
+    toolchain: Literal["STM32CubeIDE", "CMake"] | None = None
+    allow_debug_pin_change: bool = False
+
+
+class IocPlannedChange(BaseModel):
+    key: str
+    before: str | None = None
+    after: str
+    reason: str
+
+
+class IocChangePlan(BaseModel):
+    plan_id: str
+    path: str
+    source_sha256: str
+    planned_sha256: str
+    changes: list[IocPlannedChange]
+    unified_diff: str
+    validation_status: Literal["not_run"] = "not_run"
+    diagnostics: list[Diagnostic] = Field(default_factory=list)

@@ -25,13 +25,21 @@ _CLOCK_KEY = re.compile(r"^(?:RCC\.)?.*(?:Freq|Frequency)(?:_Value)?$", re.IGNOR
 class IocDocument:
     entries: OrderedDict[str, str]
     diagnostics: list[Diagnostic]
+    lines: list[str]
+    newline: str
+    has_final_newline: bool
+    key_lines: dict[str, list[int]]
 
     @classmethod
     def parse(cls, text: str) -> IocDocument:
         entries: OrderedDict[str, str] = OrderedDict()
         diagnostics: list[Diagnostic] = []
+        lines = text.splitlines()
+        newline = "\r\n" if "\r\n" in text else "\n"
+        has_final_newline = text.endswith(("\n", "\r"))
+        key_lines: dict[str, list[int]] = {}
 
-        for line_number, raw_line in enumerate(text.splitlines(), start=1):
+        for line_number, raw_line in enumerate(lines, start=1):
             line = raw_line.strip()
             if not line or line.startswith("#"):
                 continue
@@ -68,8 +76,36 @@ class IocDocument:
                     )
                 )
             entries[key] = value.strip()
+            key_lines.setdefault(key, []).append(line_number - 1)
 
-        return cls(entries=entries, diagnostics=diagnostics)
+        return cls(
+            entries=entries,
+            diagnostics=diagnostics,
+            lines=lines,
+            newline=newline,
+            has_final_newline=has_final_newline,
+            key_lines=key_lines,
+        )
+
+    def render(self, updates: OrderedDict[str, str]) -> str:
+        """Render updates and preserve all unrelated IOC lines."""
+        duplicate_updates = [key for key in updates if len(self.key_lines.get(key, [])) > 1]
+        if duplicate_updates:
+            keys = ", ".join(duplicate_updates)
+            raise ValueError(f"Cannot update duplicate IOC keys: {keys}")
+
+        output = self.lines.copy()
+        for key, value in updates.items():
+            indexes = self.key_lines.get(key)
+            if indexes:
+                output[indexes[0]] = f"{key}={value}"
+            else:
+                output.append(f"{key}={value}")
+
+        rendered = self.newline.join(output)
+        if self.has_final_newline:
+            rendered += self.newline
+        return rendered
 
 
 def _read_ioc(path: Path, max_bytes: int) -> tuple[bytes, IocDocument]:
@@ -84,6 +120,15 @@ def _read_ioc(path: Path, max_bytes: int) -> tuple[bytes, IocDocument]:
     except UnicodeDecodeError as error:
         raise ValueError(f"IOC file is not valid UTF-8: {path}") from error
     return raw, IocDocument.parse(text)
+
+
+def load_ioc_document(raw_path: str | Path, settings: Settings) -> tuple[Path, bytes, IocDocument]:
+    """Load an allowed IOC file and return its source data."""
+    path = settings.resolve_allowed_path(raw_path)
+    if not path.is_file():
+        raise ValueError(f"IOC path is not a file: {path}")
+    raw, document = _read_ioc(path, settings.max_ioc_bytes)
+    return path, raw, document
 
 
 def _ordered_values(entries: OrderedDict[str, str], pattern: re.Pattern[str]) -> list[str]:
@@ -122,11 +167,7 @@ def _clock_values(entries: OrderedDict[str, str]) -> dict[str, int]:
 
 
 def inspect_ioc(raw_path: str | Path, settings: Settings) -> IocInspection:
-    path = settings.resolve_allowed_path(raw_path)
-    if not path.is_file():
-        raise ValueError(f"IOC path is not a file: {path}")
-
-    raw, document = _read_ioc(path, settings.max_ioc_bytes)
+    path, raw, document = load_ioc_document(raw_path, settings)
     entries = document.entries
     summary = IocSummary(
         path=str(path),

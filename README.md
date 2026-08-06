@@ -22,6 +22,9 @@ also control CubeMX generation and builds.
 - `cubemx_list_ioc` finds `.ioc` files beneath an allowed directory.
 - `cubemx_inspect_ioc` returns structured MCU, project, peripheral, pin, clock,
   and version information without changing the file.
+- `cubemx_plan_ioc_changes` previews pin, peripheral, parameter, and project
+  changes. It returns a content hash and a unified text difference. It does not
+  write the `.ioc` file.
 
 ## Intended workflow
 

@@ -4,7 +4,14 @@ from mcp.server import MCPServer
 
 from stm32cubemx_mcp.discovery import discover_environment
 from stm32cubemx_mcp.ioc import inspect_ioc, list_ioc_files
-from stm32cubemx_mcp.models import EnvironmentReport, IocInspection, IocListResult
+from stm32cubemx_mcp.models import (
+    EnvironmentReport,
+    IocChangePlan,
+    IocInspection,
+    IocListResult,
+    IocPlanRequest,
+)
+from stm32cubemx_mcp.planning import plan_ioc_changes
 from stm32cubemx_mcp.settings import Settings
 
 mcp = MCPServer(
@@ -41,6 +48,12 @@ def cubemx_list_ioc(
 def cubemx_inspect_ioc(path: str) -> IocInspection:
     """Inspect one IOC file and return structured project, MCU, peripheral, pin, and clock data."""
     return inspect_ioc(path, _settings())
+
+
+@mcp.tool()
+def cubemx_plan_ioc_changes(request: IocPlanRequest) -> IocChangePlan:
+    """Plan pin, peripheral, parameter, and project changes. Do not write a file."""
+    return plan_ioc_changes(request, _settings())
 
 
 def main() -> None:
