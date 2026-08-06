@@ -1,7 +1,14 @@
 {
   "mcpServers": {
     "stm32cubemx": {
-      "command": "stm32cubemx-mcp",
+      "command": "powershell.exe",
+      "args": [
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "$server = Get-Command stm32cubemx-mcp -ErrorAction SilentlyContinue; if ($server) { & $server.Source; exit $LASTEXITCODE }; $serverPath = Join-Path $env:USERPROFILE '.local\\bin\\stm32cubemx-mcp.exe'; if (Test-Path -LiteralPath $serverPath) { & $serverPath; exit $LASTEXITCODE }; Write-Error 'stm32cubemx-mcp is not installed. Install it with pipx.'; exit 127"
+      ],
       "env": {
         "CUBEMX_MCP_CUBEMX_TIMEOUT_SECONDS": "240"
       }

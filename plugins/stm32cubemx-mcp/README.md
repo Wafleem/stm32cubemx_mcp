@@ -12,6 +12,11 @@ Install the Python MCP command:
 pipx install git+https://github.com/Wafleem/stm32cubemx_mcp.git
 ```
 
+The Windows launcher checks the Codex process PATH first. It then checks the
+default pipx application path at
+`%USERPROFILE%\.local\bin\stm32cubemx-mcp.exe`. Thus, the plugin can start the
+server when the Codex desktop app has an older PATH value.
+
 Add the marketplace and plugin:
 
 ```powershell
@@ -20,6 +25,9 @@ codex plugin add stm32cubemx-mcp@wafleem-stm32
 ```
 
 Start a new Codex task. Use `/mcp` to check the `stm32cubemx` connection.
+
+The automatic plugin launcher currently supports Windows. macOS support is a
+planned platform checkpoint.
 
 ## Development installation
 

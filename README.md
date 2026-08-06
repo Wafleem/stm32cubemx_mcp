@@ -69,6 +69,11 @@ MCP command first:
 pipx install git+https://github.com/Wafleem/stm32cubemx_mcp.git
 ```
 
+The Windows plugin first searches the Codex process PATH. If the command is not
+on that PATH, the plugin uses the default pipx application path at
+`%USERPROFILE%\.local\bin\stm32cubemx-mcp.exe`. This fallback lets the Codex
+desktop app start the server after `pipx` changes the user PATH.
+
 Then add the marketplace and plugin:
 
 ```powershell
@@ -87,7 +92,9 @@ Start a new Codex task after installation. Use `/mcp` to confirm that the
 - STM32CubeIDE and/or a CMake ARM toolchain for build features
 
 Windows is the first development platform. macOS on Apple silicon is a target
-platform and is represented in the platform abstraction and CI matrix.
+platform and is represented in the platform abstraction and CI matrix. The
+current Codex plugin launcher supports Windows. macOS users must configure the
+MCP executable path manually until the macOS plugin launcher is available.
 
 ## Development setup
 
