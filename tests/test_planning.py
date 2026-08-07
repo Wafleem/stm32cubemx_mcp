@@ -7,6 +7,7 @@ from stm32cubemx_mcp.planning import plan_ioc_changes
 from stm32cubemx_mcp.settings import Settings
 
 FIXTURE = Path(__file__).parent / "fixtures" / "nucleo_f401re.ioc"
+CURRENT_FIXTURE = Path(__file__).parent / "fixtures" / "nucleo_f401re_cubemx_6_15.ioc"
 
 
 def test_plan_adds_a_pin_peripheral_and_cmake_settings() -> None:
@@ -82,3 +83,14 @@ def test_parameter_updates_cannot_change_structural_pin_keys(key: str, value: st
 
     with pytest.raises(ValueError, match="structured pin or peripheral"):
         plan_ioc_changes(request, settings)
+
+
+def test_plan_updates_current_target_toolchain_key() -> None:
+    settings = Settings(allowed_roots=(CURRENT_FIXTURE.parent.parent.resolve(),))
+    request = IocPlanRequest(path=str(CURRENT_FIXTURE), toolchain="CMake")
+
+    plan = plan_ioc_changes(request, settings)
+
+    changes = {change.key: change.after for change in plan.changes}
+    assert changes["ProjectManager.TargetToolchain"] == "CMake"
+    assert "ProjectManager.ToolChain" not in changes

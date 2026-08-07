@@ -6,7 +6,11 @@ import json
 import re
 from collections import OrderedDict
 
-from stm32cubemx_mcp.ioc import encode_ioc_text, load_ioc_document
+from stm32cubemx_mcp.ioc import (
+    encode_ioc_text,
+    get_project_toolchain_key,
+    load_ioc_document,
+)
 from stm32cubemx_mcp.models import (
     Diagnostic,
     IocChangePlan,
@@ -155,7 +159,11 @@ def prepare_ioc_changes(request: IocPlanRequest, settings: Settings) -> tuple[Io
             "Set the project file name.",
         )
     if request.toolchain is not None:
-        set_update("ProjectManager.ToolChain", request.toolchain, "Set the project toolchain.")
+        set_update(
+            get_project_toolchain_key(document.entries),
+            request.toolchain,
+            "Set the project toolchain.",
+        )
 
     rendered = document.render(updates)
     source_text = source.decode("utf-8-sig")

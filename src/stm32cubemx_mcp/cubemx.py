@@ -121,7 +121,13 @@ def _default_required_entries(document: IocDocument) -> dict[str, str]:
     required: dict[str, str] = {}
     for key, value in document.entries.items():
         is_required = (
-            key in {"Mcu.CPN", "Mcu.Name", "ProjectManager.ToolChain"}
+            key
+            in {
+                "Mcu.CPN",
+                "Mcu.Name",
+                "ProjectManager.TargetToolchain",
+                "ProjectManager.ToolChain",
+            }
             or _PIN_INDEX_KEY.fullmatch(key)
             or _IP_INDEX_KEY.fullmatch(key)
             or key.endswith((".Signal", ".GPIO_Label", ".Locked"))

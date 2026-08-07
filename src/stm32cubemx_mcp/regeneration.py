@@ -17,7 +17,7 @@ from stm32cubemx_mcp.generation import (
     build_generation_script,
     relocate_text_paths,
 )
-from stm32cubemx_mcp.ioc import load_ioc_document
+from stm32cubemx_mcp.ioc import get_project_toolchain, load_ioc_document
 from stm32cubemx_mcp.models import (
     Diagnostic,
     ProjectFileChange,
@@ -225,7 +225,7 @@ def plan_project_regeneration(
     before_sha256 = _manifest_sha256(before)
     ioc_path = _select_ioc(request, project, before, settings)
     _, ioc_content, ioc_document = load_ioc_document(ioc_path, settings)
-    toolchain = ioc_document.entries.get("ProjectManager.ToolChain")
+    toolchain = get_project_toolchain(ioc_document.entries)
     if toolchain not in {None, "STM32CubeIDE"}:
         raise ValueError(f"The IOC toolchain is not STM32CubeIDE: {toolchain}")
     project_name = ioc_document.entries.get("ProjectManager.ProjectName") or project.name

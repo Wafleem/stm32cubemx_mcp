@@ -4,6 +4,7 @@ from stm32cubemx_mcp.ioc import IocDocument, inspect_ioc, list_ioc_files
 from stm32cubemx_mcp.settings import Settings
 
 FIXTURE = Path(__file__).parent / "fixtures" / "nucleo_f401re.ioc"
+CURRENT_FIXTURE = Path(__file__).parent / "fixtures" / "nucleo_f401re_cubemx_6_15.ioc"
 
 
 def test_inspect_ioc_returns_semantic_summary() -> None:
@@ -35,6 +36,15 @@ def test_parser_reports_duplicate_and_malformed_lines() -> None:
         "ioc.malformed_line",
         "ioc.duplicate_key",
     ]
+
+
+def test_inspect_ioc_prefers_current_target_toolchain_key() -> None:
+    settings = Settings(allowed_roots=(CURRENT_FIXTURE.parent.parent.resolve(),))
+
+    inspection = inspect_ioc(CURRENT_FIXTURE, settings)
+
+    assert inspection.summary.toolchain == "STM32CubeIDE"
+    assert inspection.summary.cubemx_version == "6.15.0"
 
 
 def test_list_ioc_files_honors_limit(tmp_path: Path) -> None:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import re
 from collections import OrderedDict
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -19,6 +20,8 @@ from stm32cubemx_mcp.settings import Settings
 _IP_KEY = re.compile(r"^Mcu\.IP\d+$")
 _PIN_KEY = re.compile(r"^Mcu\.Pin\d+$")
 _CLOCK_KEY = re.compile(r"^(?:RCC\.)?.*(?:Freq|Frequency)(?:_Value)?$", re.IGNORECASE)
+_TARGET_TOOLCHAIN_KEY = "ProjectManager.TargetToolchain"
+_LEGACY_TOOLCHAIN_KEY = "ProjectManager.ToolChain"
 
 
 @dataclass
@@ -137,6 +140,20 @@ def encode_ioc_text(text: str, source: bytes) -> bytes:
     return prefix + text.encode("utf-8")
 
 
+def get_project_toolchain(entries: Mapping[str, str]) -> str | None:
+    """Read the current CubeMX toolchain key with a legacy fallback."""
+    return entries.get(_TARGET_TOOLCHAIN_KEY) or entries.get(_LEGACY_TOOLCHAIN_KEY)
+
+
+def get_project_toolchain_key(entries: Mapping[str, str]) -> str:
+    """Select the toolchain key that the IOC file already uses."""
+    if _TARGET_TOOLCHAIN_KEY in entries:
+        return _TARGET_TOOLCHAIN_KEY
+    if _LEGACY_TOOLCHAIN_KEY in entries:
+        return _LEGACY_TOOLCHAIN_KEY
+    return _TARGET_TOOLCHAIN_KEY
+
+
 def _ordered_values(entries: OrderedDict[str, str], pattern: re.Pattern[str]) -> list[str]:
     values: list[str] = []
     seen: set[str] = set()
@@ -185,7 +202,7 @@ def inspect_ioc(raw_path: str | Path, settings: Settings) -> IocInspection:
         mcu_package=entries.get("Mcu.Package"),
         board=entries.get("board") or entries.get("Board.PartNumber"),
         project_name=entries.get("ProjectManager.ProjectName"),
-        toolchain=entries.get("ProjectManager.ToolChain"),
+        toolchain=get_project_toolchain(entries),
         cubemx_version=entries.get("MxCube.Version"),
         database_version=entries.get("MxDb.Version"),
         peripherals=_ordered_values(entries, _IP_KEY),
