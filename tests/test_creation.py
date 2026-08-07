@@ -24,9 +24,7 @@ def _request(output_directory: Path, *, target_kind: str = "board") -> IocCreate
     )
 
 
-def _runner(
-    commands: list[str], settings: Settings, work_directory: Path
-) -> CubeMXProcessResult:
+def _runner(commands: list[str], settings: Settings, work_directory: Path) -> CubeMXProcessResult:
     del settings
     save_command = next(item for item in commands if item.startswith("config saveas"))
     ioc_path = Path(save_command.split('"', maxsplit=2)[1])
@@ -42,9 +40,7 @@ def _runner(
     )
 
 
-def _validator(
-    source_path: Path, content: bytes, settings: Settings
-) -> IocValidationResult:
+def _validator(source_path: Path, content: bytes, settings: Settings) -> IocValidationResult:
     del settings
     digest = hashlib.sha256(content).hexdigest()
     return IocValidationResult(

@@ -88,9 +88,7 @@ def create_ioc(
         raise FileExistsError(f"IOC output directory already exists: {destination}")
 
     destination_ioc = destination / f"{request.project_name}.ioc"
-    stage = Path(
-        tempfile.mkdtemp(prefix=f".{request.project_name}-ioc-", dir=destination.parent)
-    )
+    stage = Path(tempfile.mkdtemp(prefix=f".{request.project_name}-ioc-", dir=destination.parent))
     promoted = False
     destination_created = False
     try:

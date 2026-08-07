@@ -151,9 +151,7 @@ def test_generate_project_rejects_existing_output_directory(tmp_path: Path) -> N
         raise AssertionError("Generation accepted an existing output directory.")
 
 
-def test_promote_directory_accepts_a_completed_windows_rename(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_promote_directory_accepts_a_completed_windows_rename(tmp_path: Path, monkeypatch) -> None:
     source = tmp_path / "stage"
     destination = tmp_path / "output"
     source.mkdir()
