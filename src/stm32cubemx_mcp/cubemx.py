@@ -125,8 +125,11 @@ def _default_required_entries(document: IocDocument) -> dict[str, str]:
             in {
                 "Mcu.CPN",
                 "Mcu.Name",
+                "ProjectManager.ProjectFileName",
+                "ProjectManager.ProjectName",
                 "ProjectManager.TargetToolchain",
                 "ProjectManager.ToolChain",
+                "ProjectManager.UnderRoot",
             }
             or _PIN_INDEX_KEY.fullmatch(key)
             or _IP_INDEX_KEY.fullmatch(key)

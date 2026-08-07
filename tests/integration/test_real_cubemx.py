@@ -6,10 +6,10 @@ import pytest
 
 from stm32cubemx_mcp.creation import create_ioc
 from stm32cubemx_mcp.discovery import discover_environment
-from stm32cubemx_mcp.generation import generate_project
+from stm32cubemx_mcp.generation import generate_project, validate_generated_project
+from stm32cubemx_mcp.ioc import inspect_ioc
 from stm32cubemx_mcp.models import (
     IocCreateRequest,
-    IocValidationResult,
     ProjectGenerationRequest,
     RegenerationPlanRequest,
 )
@@ -52,12 +52,6 @@ def test_create_and_validate_nucleo_f401re_ioc(tmp_path: Path) -> None:
 
     generation_settings = replace(settings, allowed_roots=(tmp_path.resolve(),))
 
-    def use_previous_validation(
-        source_path: Path, content: bytes, active_settings: Settings
-    ) -> IocValidationResult:
-        del source_path, content, active_settings
-        return validation
-
     generated_path = tmp_path / "generated"
     generation = generate_project(
         ProjectGenerationRequest(
@@ -66,24 +60,41 @@ def test_create_and_validate_nucleo_f401re_ioc(tmp_path: Path) -> None:
             project_name="nucleo_f401re_app",
         ),
         generation_settings,
-        validator=use_previous_validation,
     )
 
     generation_codes = [item.code for item in generation.diagnostics]
     assert generation.succeeded, generation_codes
-    assert (generated_path / ".project").is_file()
-    assert (generated_path / ".cproject").is_file()
+    project_root = Path(generation.project_path)
+    assert project_root == generated_path
+    assert (project_root / ".project").is_file()
+    assert (project_root / ".cproject").is_file()
     assert any(path.endswith(".ioc") for path in generation.generated_files)
-
-    source_before = snapshot_project(generated_path, generation_settings)
-    regeneration = plan_project_regeneration(
-        RegenerationPlanRequest(project_directory=str(generated_path)),
-        generation_settings,
-        validator=use_previous_validation,
+    assert any(path.name == "main.c" for path in generated_path.rglob("main.c"))
+    assert any(path.name == "main.h" for path in generated_path.rglob("main.h"))
+    assert any(path.name.startswith("core_cm") for path in generated_path.rglob("core_cm*.h"))
+    assert any(path.name.endswith("_hal.c") for path in generated_path.rglob("*_hal.c"))
+    assert not validate_generated_project(generated_path, project_root, "nucleo_f401re_app")
+    generated_ioc = generated_path / "nucleo_f401re_app.ioc"
+    inspection = inspect_ioc(generated_ioc, generation_settings)
+    assert inspection.summary.project_name == "nucleo_f401re_app"
+    assert inspection.summary.toolchain == "STM32CubeIDE"
+    assert "ProjectManager.ProjectFileName=nucleo_f401re_app.ioc" in (
+        generated_ioc.read_text(encoding="utf-8")
     )
 
+    source_before = snapshot_project(project_root, generation_settings)
+    regeneration = plan_project_regeneration(
+        RegenerationPlanRequest(project_directory=str(project_root)),
+        generation_settings,
+    )
+
+    assert regeneration.succeeded, regeneration.diagnostics
+    assert regeneration.validation is not None
+    assert regeneration.validation.valid
+    assert regeneration.cubemx is not None
     assert regeneration.cubemx.succeeded
     assert regeneration.source_manifest_sha256
     assert regeneration.planned_manifest_sha256
-    assert snapshot_project(generated_path, generation_settings) == source_before
+    assert snapshot_project(project_root, generation_settings) == source_before
+    assert not (project_root / "roundtrip" / "roundtrip.ioc").exists()
     assert not list(tmp_path.glob(".*-regeneration-*"))

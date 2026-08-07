@@ -196,6 +196,7 @@ class ProjectGenerationRequest(BaseModel):
 
 class ProjectGenerationResult(BaseModel):
     succeeded: bool
+    output_directory: str
     project_path: str
     project_name: str
     toolchain: Literal["STM32CubeIDE"]
