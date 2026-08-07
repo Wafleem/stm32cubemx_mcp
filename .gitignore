@@ -21,3 +21,6 @@ Debug/
 Release/
 cmake-build-*/
 
+# Local STM32CubeMX integration output
+nucleo_f401re_mcp_test/
+nucleo_f401re_test/
