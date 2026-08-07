@@ -76,6 +76,7 @@ def test_regeneration_plan_reports_file_changes_without_source_writes(
         script_runner=_regeneration_runner,
     )
 
+    assert plan.succeeded
     changes = {item.path: item for item in plan.changes}
     assert changes["Core/Src/main.c"].change == "modified"
     assert changes["Core/Src/gpio.c"].change == "added"
@@ -84,6 +85,35 @@ def test_regeneration_plan_reports_file_changes_without_source_writes(
     assert snapshot_project(project, settings) == source_before
     assert not list(tmp_path.glob(".*-regeneration-*"))
     assert [item.code for item in plan.diagnostics] == ["regeneration.preview_only"]
+
+
+def test_regeneration_reports_a_source_change_created_by_validation(tmp_path: Path) -> None:
+    project = _cubeide_project(tmp_path)
+    settings = Settings(allowed_roots=(tmp_path,))
+
+    def source_writing_validator(
+        source_path: Path, content: bytes, active_settings: Settings
+    ) -> IocValidationResult:
+        result = _valid_validator(source_path, content, active_settings)
+        unexpected = project / "roundtrip" / "roundtrip.ioc"
+        unexpected.parent.mkdir()
+        unexpected.write_bytes(content)
+        return result
+
+    plan = plan_project_regeneration(
+        RegenerationPlanRequest(project_directory=str(project)),
+        settings,
+        validator=source_writing_validator,
+        script_runner=_regeneration_runner,
+    )
+
+    assert not plan.succeeded
+    assert plan.plan_id is None
+    assert plan.cubemx is None
+    assert [item.code for item in plan.diagnostics] == [
+        "regeneration.source_changed_after_validation"
+    ]
+    assert "roundtrip/roundtrip.ioc" in plan.diagnostics[0].message
 
 
 def test_regeneration_plan_requires_one_ioc_file(tmp_path: Path) -> None:

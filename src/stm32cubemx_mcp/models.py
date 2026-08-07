@@ -222,12 +222,13 @@ class ProjectFileChange(BaseModel):
 
 
 class RegenerationPlanResult(BaseModel):
-    plan_id: str
+    succeeded: bool
+    plan_id: str | None = None
     project_path: str
     ioc_path: str
     source_manifest_sha256: str
-    planned_manifest_sha256: str
+    planned_manifest_sha256: str | None = None
     changes: list[ProjectFileChange]
-    validation: IocValidationResult
-    cubemx: CubeMXProcessResult
+    validation: IocValidationResult | None = None
+    cubemx: CubeMXProcessResult | None = None
     diagnostics: list[Diagnostic] = Field(default_factory=list)

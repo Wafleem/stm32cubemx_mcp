@@ -182,9 +182,7 @@ def validate_ioc_content(
     requirements = dict(required_entries or _default_required_entries(source_document))
     diagnostics = list(source_document.diagnostics)
 
-    with tempfile.TemporaryDirectory(
-        prefix=f".{source_path.stem}-cubemx-", dir=source_path.parent
-    ) as temporary_name:
+    with tempfile.TemporaryDirectory(prefix=f"{source_path.stem}-cubemx-") as temporary_name:
         stage = Path(temporary_name)
         staged_input = stage / source_path.name
         roundtrip_path = stage / "roundtrip.ioc"

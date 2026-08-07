@@ -19,7 +19,9 @@ from stm32cubemx_mcp.generation import (
 )
 from stm32cubemx_mcp.ioc import get_project_toolchain, load_ioc_document
 from stm32cubemx_mcp.models import (
+    CubeMXProcessResult,
     Diagnostic,
+    IocValidationResult,
     ProjectFileChange,
     RegenerationPlanRequest,
     RegenerationPlanResult,
@@ -184,6 +186,42 @@ def _project_changes(
     return changes
 
 
+def _manifest_change_description(before: dict[str, FileState], after: dict[str, FileState]) -> str:
+    added = sorted(after.keys() - before.keys())
+    deleted = sorted(before.keys() - after.keys())
+    modified = sorted(path for path in before.keys() & after.keys() if before[path] != after[path])
+    parts: list[str] = []
+    if added:
+        parts.append("Added: " + ", ".join(added))
+    if modified:
+        parts.append("Modified: " + ", ".join(modified))
+    if deleted:
+        parts.append("Deleted: " + ", ".join(deleted))
+    return "; ".join(parts) or "No changed path was identified."
+
+
+def _failed_plan(
+    *,
+    project: Path,
+    ioc_path: Path,
+    source_manifest_sha256: str,
+    code: str,
+    message: str,
+    validation: IocValidationResult | None = None,
+    process: CubeMXProcessResult | None = None,
+) -> RegenerationPlanResult:
+    return RegenerationPlanResult(
+        succeeded=False,
+        project_path=str(project),
+        ioc_path=str(ioc_path),
+        source_manifest_sha256=source_manifest_sha256,
+        changes=[],
+        validation=validation,
+        cubemx=process,
+        diagnostics=[Diagnostic(severity="error", code=code, message=message)],
+    )
+
+
 def _select_ioc(
     request: RegenerationPlanRequest,
     project: Path,
@@ -232,15 +270,23 @@ def plan_project_regeneration(
     if not _PROJECT_NAME.fullmatch(project_name):
         raise ValueError(f"The CubeMX project name is invalid: {project_name}")
 
-    validation = validator(ioc_path, ioc_content, settings)
-    if not validation.valid:
-        raise ValueError("STM32CubeMX did not validate the existing project IOC file")
-
     with tempfile.TemporaryDirectory(
         prefix=f".{project.name}-regeneration-", dir=project.parent
     ) as container_name:
         container = Path(container_name)
         stage = container / "project"
+        current_before_copy = snapshot_project(project, settings)
+        if current_before_copy != before:
+            return _failed_plan(
+                project=project,
+                ioc_path=ioc_path,
+                source_manifest_sha256=before_sha256,
+                code="regeneration.source_changed_before_copy",
+                message=(
+                    "The source project changed before the staged copy. "
+                    + _manifest_change_description(before, current_before_copy)
+                ),
+            )
         shutil.copytree(
             project,
             stage,
@@ -250,21 +296,97 @@ def plan_project_regeneration(
         )
         copied = snapshot_project(stage, settings)
         if _manifest_sha256(copied) != before_sha256:
-            raise RuntimeError("The source project changed while the tool copied it")
+            current_after_copy = snapshot_project(project, settings)
+            code = (
+                "regeneration.source_changed_during_copy"
+                if current_after_copy != before
+                else "regeneration.copy_mismatch"
+            )
+            message = (
+                "The source project changed during the staged copy. "
+                + _manifest_change_description(before, current_after_copy)
+                if current_after_copy != before
+                else "The staged project copy does not match the source project manifest."
+            )
+            return _failed_plan(
+                project=project,
+                ioc_path=ioc_path,
+                source_manifest_sha256=before_sha256,
+                code=code,
+                message=message,
+            )
+
+        validation_directory = container / "validation"
+        validation_directory.mkdir()
+        validation_ioc = validation_directory / ioc_path.name
+        validation_ioc.write_bytes(ioc_content)
+        validation = validator(validation_ioc, ioc_content, settings).model_copy(
+            update={"path": str(ioc_path)}
+        )
+        current_after_validation = snapshot_project(project, settings)
+        if current_after_validation != before:
+            return _failed_plan(
+                project=project,
+                ioc_path=ioc_path,
+                source_manifest_sha256=before_sha256,
+                code="regeneration.source_changed_after_validation",
+                message=(
+                    "The source project changed after IOC validation. "
+                    + _manifest_change_description(before, current_after_validation)
+                ),
+                validation=validation,
+            )
+        if not validation.valid:
+            return _failed_plan(
+                project=project,
+                ioc_path=ioc_path,
+                source_manifest_sha256=before_sha256,
+                code="regeneration.ioc_invalid",
+                message="STM32CubeMX did not validate the existing project IOC file.",
+                validation=validation,
+            )
+
         staged_ioc = stage / ioc_path.relative_to(project)
         commands = build_generation_script(staged_ioc, stage, project_name)
         process = script_runner(commands, settings, stage)
         if not process.succeeded:
-            raise RuntimeError("STM32CubeMX did not complete staged project regeneration")
+            return _failed_plan(
+                project=project,
+                ioc_path=ioc_path,
+                source_manifest_sha256=before_sha256,
+                code="regeneration.cubemx_failed",
+                message="STM32CubeMX did not complete staged project regeneration.",
+                validation=validation,
+                process=process,
+            )
         if not (stage / ".project").is_file() or not (stage / ".cproject").is_file():
-            raise RuntimeError("STM32CubeMX removed required CubeIDE project files")
+            return _failed_plan(
+                project=project,
+                ioc_path=ioc_path,
+                source_manifest_sha256=before_sha256,
+                code="regeneration.artifacts_missing",
+                message="STM32CubeMX removed required CubeIDE project files.",
+                validation=validation,
+                process=process,
+            )
 
         relocate_text_paths(stage, stage, project)
         after = snapshot_project(stage, settings)
         after_sha256 = _manifest_sha256(after)
         current = snapshot_project(project, settings)
-        if _manifest_sha256(current) != before_sha256:
-            raise RuntimeError("The source project changed during regeneration planning")
+        if current != before:
+            return _failed_plan(
+                project=project,
+                ioc_path=ioc_path,
+                source_manifest_sha256=before_sha256,
+                code="regeneration.source_changed_during_preview",
+                message=(
+                    "The source project changed during regeneration preview. "
+                    + _manifest_change_description(before, current)
+                ),
+                validation=validation,
+                process=process,
+            )
         changes = _project_changes(project, stage, before, after)
 
     plan_data = {
@@ -277,6 +399,7 @@ def plan_project_regeneration(
         json.dumps(plan_data, separators=(",", ":"), sort_keys=True).encode("utf-8")
     ).hexdigest()[:20]
     return RegenerationPlanResult(
+        succeeded=True,
         plan_id=plan_id,
         project_path=str(project),
         ioc_path=str(ioc_path),
