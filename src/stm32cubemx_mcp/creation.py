@@ -7,7 +7,13 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-from stm32cubemx_mcp.cubemx import ScriptRunner, run_cubemx_script, validate_ioc_content
+from stm32cubemx_mcp.cubemx import (
+    ScriptRunner,
+    compact_process_result,
+    run_cubemx_script,
+    successful_process_diagnostics,
+    validate_ioc_content,
+)
 from stm32cubemx_mcp.generation import relocate_text_paths
 from stm32cubemx_mcp.models import (
     Diagnostic,
@@ -95,6 +101,7 @@ def create_ioc(
         staged_ioc = stage / destination_ioc.name
         commands = build_ioc_creation_script(request, stage, staged_ioc)
         process = script_runner(commands, settings, stage)
+        process_diagnostics = successful_process_diagnostics(process)
         common = {
             "ioc_path": str(destination_ioc),
             "project_path": str(destination),
@@ -103,18 +110,19 @@ def create_ioc(
             "target": request.target,
             "board_mode": request.board_mode if request.target_kind == "board" else None,
             "toolchain": request.toolchain,
-            "cubemx": process,
+            "cubemx": compact_process_result(process),
         }
         if not process.succeeded:
             return IocCreateResult(
                 succeeded=False,
                 **common,
                 diagnostics=[
+                    *process_diagnostics,
                     Diagnostic(
                         severity="error",
                         code="creation.cubemx_failed",
                         message="STM32CubeMX did not complete IOC creation.",
-                    )
+                    ),
                 ],
             )
         if not staged_ioc.is_file():
@@ -122,11 +130,12 @@ def create_ioc(
                 succeeded=False,
                 **common,
                 diagnostics=[
+                    *process_diagnostics,
                     Diagnostic(
                         severity="error",
                         code="creation.ioc_missing",
                         message="STM32CubeMX did not create the IOC file.",
-                    )
+                    ),
                 ],
             )
 
@@ -145,11 +154,12 @@ def create_ioc(
                 source_sha256=source_sha256,
                 validation=validation,
                 diagnostics=[
+                    *process_diagnostics,
                     Diagnostic(
                         severity="error",
                         code="creation.ioc_invalid",
                         message="STM32CubeMX did not validate the new IOC file.",
-                    )
+                    ),
                 ],
             )
 
@@ -168,6 +178,7 @@ def create_ioc(
             **common,
             source_sha256=source_sha256,
             validation=validation,
+            diagnostics=process_diagnostics,
         )
     finally:
         _remove_stage(stage)

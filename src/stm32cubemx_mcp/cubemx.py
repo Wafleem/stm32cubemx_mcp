@@ -22,6 +22,7 @@ _PIN_INDEX_KEY = re.compile(r"^Mcu\.Pin\d+$")
 _IP_INDEX_KEY = re.compile(r"^Mcu\.IP\d+$")
 
 ScriptRunner = Callable[[list[str], Settings, Path], CubeMXProcessResult]
+_SUCCESS_OUTPUT_TAIL_CHARS = 1200
 
 
 def _script_path(path: Path) -> str:
@@ -59,6 +60,50 @@ def _limit_output(text: str | None, limit: int) -> str:
         f"{value[:head_size]}\n[Output truncated. Removed {removed} characters.]\n"
         f"{value[-tail_size:]}"
     )
+
+
+def compact_process_result(process: CubeMXProcessResult) -> CubeMXProcessResult:
+    """Keep a short output tail after a successful CubeMX process."""
+    if not process.succeeded:
+        return process
+
+    def tail(value: str) -> str:
+        if len(value) <= _SUCCESS_OUTPUT_TAIL_CHARS:
+            return value
+        removed = len(value) - _SUCCESS_OUTPUT_TAIL_CHARS
+        return (
+            f"[Earlier successful output removed: {removed} characters.]\n"
+            f"{value[-_SUCCESS_OUTPUT_TAIL_CHARS:]}"
+        )
+
+    return process.model_copy(
+        update={"stdout": tail(process.stdout), "stderr": tail(process.stderr)}
+    )
+
+
+def successful_process_diagnostics(process: CubeMXProcessResult) -> list[Diagnostic]:
+    """Convert nonfatal CubeMX process output to structured diagnostics."""
+    if not process.succeeded or not process.stderr.strip():
+        return []
+    normalized = process.stderr.lower()
+    if "java.util.prefs" in normalized or "preferences warning" in normalized:
+        return [
+            Diagnostic(
+                severity="warning",
+                code="cubemx.java_preferences_warning",
+                message="Java reported a nonfatal preferences warning.",
+            )
+        ]
+    output = process.stderr.strip()
+    if len(output) > 500:
+        output = "[Earlier output removed.] " + output[-500:]
+    return [
+        Diagnostic(
+            severity="warning",
+            code="cubemx.nonfatal_stderr",
+            message=f"STM32CubeMX reported nonfatal process output: {output}",
+        )
+    ]
 
 
 def run_cubemx_script(
@@ -192,6 +237,9 @@ def validate_ioc_content(
         staged_input.write_bytes(content)
         commands = build_validation_script(staged_input, roundtrip_path)
         process = script_runner(commands, settings, stage)
+        process_diagnostics = successful_process_diagnostics(process)
+        compact_process = compact_process_result(process)
+        diagnostics.extend(process_diagnostics)
 
         if not process.succeeded:
             diagnostics.append(
@@ -205,7 +253,7 @@ def validate_ioc_content(
                 path=str(source_path),
                 valid=False,
                 source_sha256=source_sha256,
-                cubemx=process,
+                cubemx=compact_process,
                 diagnostics=diagnostics,
             )
         ok_responses = len(re.findall(r"(?m)^\s*OK\s*$", process.stdout))
@@ -221,7 +269,7 @@ def validate_ioc_content(
                 path=str(source_path),
                 valid=False,
                 source_sha256=source_sha256,
-                cubemx=process,
+                cubemx=compact_process,
                 diagnostics=diagnostics,
             )
         if not roundtrip_path.is_file():
@@ -236,7 +284,7 @@ def validate_ioc_content(
                 path=str(source_path),
                 valid=False,
                 source_sha256=source_sha256,
-                cubemx=process,
+                cubemx=compact_process,
                 diagnostics=diagnostics,
             )
 
@@ -250,7 +298,7 @@ def validate_ioc_content(
             valid=valid,
             source_sha256=source_sha256,
             roundtrip_sha256=hashlib.sha256(roundtrip_content).hexdigest(),
-            cubemx=process,
+            cubemx=compact_process,
             diagnostics=diagnostics,
         )
 

@@ -4,6 +4,8 @@ from pathlib import Path
 from stm32cubemx_mcp.cubemx import (
     build_cubemx_command,
     build_validation_script,
+    compact_process_result,
+    successful_process_diagnostics,
     validate_ioc_content,
 )
 from stm32cubemx_mcp.models import CubeMXProcessResult, ExecutableInfo
@@ -70,6 +72,35 @@ def test_build_validation_script_quotes_paths(tmp_path: Path) -> None:
         f'config saveas "{output_path}"',
         "exit",
     ]
+
+
+def test_compact_process_result_keeps_a_short_successful_output_tail() -> None:
+    process = CubeMXProcessResult(
+        succeeded=True,
+        exit_code=0,
+        duration_seconds=0.01,
+        stdout="start-" + ("x" * 3000) + "-end",
+    )
+
+    compact = compact_process_result(process)
+
+    assert len(compact.stdout) < 1400
+    assert compact.stdout.endswith("-end")
+    assert "Earlier successful output removed" in compact.stdout
+
+
+def test_successful_process_diagnostics_maps_java_preferences_warning() -> None:
+    process = CubeMXProcessResult(
+        succeeded=True,
+        exit_code=0,
+        duration_seconds=0.01,
+        stderr="java.util.prefs.WindowsPreferences WARNING: Access was denied.",
+    )
+
+    diagnostics = successful_process_diagnostics(process)
+
+    assert [item.code for item in diagnostics] == ["cubemx.java_preferences_warning"]
+    assert diagnostics[0].severity == "warning"
 
 
 def test_validate_ioc_content_accepts_preserved_settings(tmp_path: Path) -> None:

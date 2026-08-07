@@ -10,7 +10,13 @@ from collections import OrderedDict
 from collections.abc import Callable
 from pathlib import Path
 
-from stm32cubemx_mcp.cubemx import ScriptRunner, run_cubemx_script, validate_ioc_content
+from stm32cubemx_mcp.cubemx import (
+    ScriptRunner,
+    compact_process_result,
+    run_cubemx_script,
+    successful_process_diagnostics,
+    validate_ioc_content,
+)
 from stm32cubemx_mcp.ioc import (
     IocDocument,
     encode_ioc_text,
@@ -329,18 +335,21 @@ def generate_project(
             request.project_name,
         )
         process = script_runner(commands, settings, stage)
+        process_diagnostics = successful_process_diagnostics(process)
+        compact_process = compact_process_result(process)
         if not process.succeeded:
             return ProjectGenerationResult(
                 succeeded=False,
                 project_path=str(destination),
                 **common,
-                cubemx=process,
+                cubemx=compact_process,
                 diagnostics=[
+                    *process_diagnostics,
                     Diagnostic(
                         severity="error",
                         code="generation.cubemx_failed",
                         message="STM32CubeMX did not complete project generation.",
-                    )
+                    ),
                 ],
             )
 
@@ -350,13 +359,14 @@ def generate_project(
                 succeeded=False,
                 project_path=str(destination),
                 **common,
-                cubemx=process,
+                cubemx=compact_process,
                 diagnostics=[
+                    *process_diagnostics,
                     Diagnostic(
                         severity="error",
                         code="generation.artifacts_missing",
                         message="CubeMX did not create one CubeIDE project root.",
-                    )
+                    ),
                 ],
             )
 
@@ -368,8 +378,8 @@ def generate_project(
                 succeeded=False,
                 project_path=str(destination),
                 **common,
-                cubemx=process,
-                diagnostics=artifact_diagnostics,
+                cubemx=compact_process,
+                diagnostics=[*process_diagnostics, *artifact_diagnostics],
             )
 
         project_relative = project_root.relative_to(stage)
@@ -387,16 +397,17 @@ def generate_project(
                 succeeded=False,
                 project_path=str(destination),
                 **common,
-                cubemx=process,
-                diagnostics=final_diagnostics,
+                cubemx=compact_process,
+                diagnostics=[*process_diagnostics, *final_diagnostics],
             )
         promoted = True
         return ProjectGenerationResult(
             succeeded=True,
             **common,
             project_path=str(final_project_root),
-            cubemx=process,
+            cubemx=compact_process,
             generated_files=_generated_files(destination),
+            diagnostics=process_diagnostics,
         )
     finally:
         if not promoted or stage.exists():

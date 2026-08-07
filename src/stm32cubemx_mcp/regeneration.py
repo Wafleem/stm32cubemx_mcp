@@ -11,7 +11,13 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from stm32cubemx_mcp.cubemx import ScriptRunner, run_cubemx_script, validate_ioc_content
+from stm32cubemx_mcp.cubemx import (
+    ScriptRunner,
+    compact_process_result,
+    run_cubemx_script,
+    successful_process_diagnostics,
+    validate_ioc_content,
+)
 from stm32cubemx_mcp.generation import (
     ContentValidator,
     build_generation_script,
@@ -210,6 +216,7 @@ def _failed_plan(
     validation: IocValidationResult | None = None,
     process: CubeMXProcessResult | None = None,
 ) -> RegenerationPlanResult:
+    process_diagnostics = successful_process_diagnostics(process) if process else []
     return RegenerationPlanResult(
         succeeded=False,
         project_path=str(project),
@@ -217,8 +224,11 @@ def _failed_plan(
         source_manifest_sha256=source_manifest_sha256,
         changes=[],
         validation=validation,
-        cubemx=process,
-        diagnostics=[Diagnostic(severity="error", code=code, message=message)],
+        cubemx=compact_process_result(process) if process else None,
+        diagnostics=[
+            *process_diagnostics,
+            Diagnostic(severity="error", code=code, message=message),
+        ],
     )
 
 
@@ -407,12 +417,13 @@ def plan_project_regeneration(
         planned_manifest_sha256=after_sha256,
         changes=changes,
         validation=validation,
-        cubemx=process,
+        cubemx=compact_process_result(process),
         diagnostics=[
+            *successful_process_diagnostics(process),
             Diagnostic(
                 severity="info",
                 code="regeneration.preview_only",
                 message="This regeneration plan did not change the source project.",
-            )
+            ),
         ],
     )
