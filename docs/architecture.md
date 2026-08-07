@@ -82,13 +82,17 @@ after a failure.
 The generation tool only accepts a new output directory. It uses this sequence:
 
 ```text
-validate IOC -> create staging directory -> copy IOC -> run CubeMX generation
-             -> verify .project and .cproject -> relocate staging paths
-             -> move the complete project to the output directory
+read source IOC -> create staging directory -> set staged project identity
+                -> validate staged IOC -> run CubeMX generation
+                -> resolve all Eclipse linked resources
+                -> verify required source, HAL, and CMSIS files
+                -> relocate staging paths -> move the complete output container
 ```
 
-The tool removes the staging directory after a failure. It does not change the
-source IOC file.
+The generated output can contain an Eclipse project below a larger container.
+The tool preserves the complete container. It returns the container path and
+the Eclipse project path as separate fields. The tool removes the staging
+directory after a failure. It does not change the source IOC file.
 
 ## Existing-project regeneration preview
 
@@ -97,14 +101,16 @@ Each manifest contains the relative path, file size, and SHA-256 hash. The tool
 uses this sequence:
 
 ```text
-scan source -> validate IOC -> copy project -> regenerate copy
+scan source -> copy project -> validate an isolated IOC copy
+            -> confirm source did not change -> regenerate project copy
             -> restore source path references -> scan copy -> compare files
             -> confirm source did not change -> return plan -> remove copy
 ```
 
 The tool does not copy build-output directories or Git metadata. It rejects
 symbolic links and Windows reparse points. It also applies configurable file
-count and project size limits.
+count and project size limits. A source-change diagnostic identifies each
+added, modified, or deleted path.
 
 ## Path and process safety
 
@@ -116,6 +122,8 @@ count and project size limits.
   release and require separate explicit tools.
 - Stdio protocol output is isolated from logs and child-process output.
 - Timeouts and captured-output limits apply to every external command.
+- Successful process results contain a short captured-output tail.
+- Nonfatal process warnings use structured diagnostics.
 
 ## Tool contract
 

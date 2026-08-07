@@ -30,6 +30,11 @@ structured tool call.
    unless the user explicitly requests the bypass and accepts the risk.
 8. Use `cubemx_generate_project` only for a new output directory. Use
    `cubemx_plan_regeneration` for an existing STM32CubeIDE project.
+9. Check `succeeded` before you report a completed generation or regeneration
+   preview. Report all warning and error diagnostics.
+10. Treat `output_directory` as the complete generated container. Treat
+    `project_path` as the Eclipse project root. Do not assume that these paths
+    are equal.
 
 ## Safety rules
 
@@ -41,6 +46,7 @@ structured tool call.
   results.
 - Do not state that an existing project was regenerated. The current tool only
   previews existing-project regeneration.
+- Do not use `plan_id` when a regeneration result has `succeeded=false`.
 - Do not state that a project compiled. The MCP does not have a build tool yet.
 - Report CubeMX diagnostics. Do not replace an unresolved configuration with a
   guessed setting.

@@ -29,7 +29,7 @@ Tool | Purpose | File effect
 `cubemx_apply_ioc_changes` | Validate and apply an approved IOC plan. | Creates a backup and replaces one IOC file
 `cubemx_validate_ioc` | Load and save a staged IOC copy with CubeMX. | Source file remains unchanged
 `cubemx_create_ioc` | Create and validate one IOC file for a board or MCU. | Creates one new directory
-`cubemx_generate_project` | Generate one new STM32CubeIDE project. | Creates one new project directory
+`cubemx_generate_project` | Generate one new STM32CubeIDE project. | Creates one new output container
 `cubemx_plan_regeneration` | Regenerate a temporary copy of an existing CubeIDE project. | Source project remains unchanged
 
 ## Intended workflow
@@ -208,12 +208,27 @@ both an explicit request value and the
 
 Use `cubemx_generate_project` for a new STM32CubeIDE project. The output
 directory must not exist. The tool validates the IOC file, generates into a
-temporary directory, checks the CubeIDE artifacts, and then moves the complete
-project to the requested path.
+temporary directory, and then checks the complete CubeIDE output. The check
+resolves each linked resource in the Eclipse `.project` file. It also requires
+`main.c`, `main.h`, a CMSIS core header, and a Hardware Abstraction Layer (HAL)
+source file. The tool moves the complete output container to the requested
+path only after these checks pass.
+
+The tool sets the staged IOC project name and filename to the requested project
+name. It selects the current CubeMX toolchain key when that key is available.
+It also requests a project below one root directory. These staged changes do
+not change the source IOC file.
+
+The `output_directory` result identifies the complete generated container. The
+`project_path` result identifies the Eclipse project root. These paths are
+usually equal. They can be different when CubeMX creates nested Eclipse
+metadata.
 
 Use `cubemx_plan_regeneration` for an existing STM32CubeIDE project. This tool
-copies the project, regenerates the copy, and reports added, modified, and
-deleted files. It does not change the source project.
+copies the project before validation. It validates the IOC file in an isolated
+temporary directory. It then regenerates the copy and reports added, modified,
+and deleted files. It checks the source project after each phase. It does not
+change the source project.
 
 The current server does not apply an existing-project regeneration plan. It
 also does not compile a project. Treat IOC validation, project generation, and
@@ -244,6 +259,11 @@ users must use natural-language prompts instead of writing JSON-RPC messages.
 
 All tool results use structured JSON. Diagnostics contain `severity`, `code`,
 `message`, and an optional IOC line number.
+
+CubeMX process results contain the exit code, duration, timeout state, and
+captured output. Successful results contain only a short output tail. Failed
+results keep a larger bounded output for diagnosis. Nonfatal Java preferences
+output uses the `cubemx.java_preferences_warning` diagnostic code.
 
 ### Read-only calls
 
@@ -428,8 +448,11 @@ The tool has one `request` argument:
 
 The current generation tool supports only `STM32CubeIDE`. The project name can
 contain letters, numbers, `_`, `.`, and `-`. It can contain 1 to 80 characters.
-The result contains the project path, validation result, CubeMX process result,
-generated-file list, and diagnostics.
+The source IOC file remains unchanged. The result contains `succeeded`,
+`output_directory`, `project_path`, `project_name`, `toolchain`,
+`source_sha256`, the validation result, the CubeMX process result, the
+generated-file list, and diagnostics. `output_directory` identifies the
+complete output container. `project_path` identifies the Eclipse project root.
 
 #### `cubemx_plan_regeneration`
 
@@ -447,7 +470,9 @@ The tool has one `request` argument:
 Set `ioc_path` when the project contains more than one IOC file. A relative IOC
 path is relative to `project_directory`. The result contains source and planned
 project-manifest hashes, file changes, IOC validation, the CubeMX process
-result, and diagnostics.
+result, and diagnostics. Check `succeeded` before you use `plan_id` or
+`planned_manifest_sha256`. These fields can be null when a safe preview does
+not complete. A source-change diagnostic identifies each detected path.
 
 ### JSON-RPC call form
 

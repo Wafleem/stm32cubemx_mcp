@@ -56,8 +56,13 @@ current working directory.
 Ask Codex to inspect the environment and the IOC file before it plans a change.
 Review each change plan before you permit an apply or generation tool.
 
+For a new project, `output_directory` identifies the complete generated
+container. `project_path` identifies the Eclipse project root. Codex must check
+the `succeeded` value and diagnostics before it reports generation success.
+
 The current plugin can preview regeneration of an existing STM32CubeIDE
-project. It cannot apply that regeneration plan yet.
+project. The preview uses an isolated validation directory. It cannot apply
+that regeneration plan yet.
 
 ## Status
 
