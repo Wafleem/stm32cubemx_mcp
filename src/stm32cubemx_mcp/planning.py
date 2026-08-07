@@ -17,7 +17,9 @@ from stm32cubemx_mcp.settings import Settings
 
 _SAFE_KEY = re.compile(r"^[A-Za-z0-9_.-]+$")
 _SAFE_TOKEN = re.compile(r"^[A-Za-z0-9_.+:/() -]+$")
-_STRUCTURAL_KEY = re.compile(r"^Mcu\.(?:Pin|IP)\d+$")
+_STRUCTURAL_KEY = re.compile(
+    r"^(?:Mcu\.(?:Pin|IP)\d+|[A-Za-z0-9+_-]+\.(?:Signal|GPIO_Label|Locked))$"
+)
 _PROTECTED_DEBUG_SIGNALS = {
     "PA13": "SYS_JTMS-SWDIO",
     "PA14": "SYS_JTCK-SWCLK",

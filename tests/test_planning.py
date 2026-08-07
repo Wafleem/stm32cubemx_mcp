@@ -64,11 +64,20 @@ def test_plan_protects_swd_pins_by_default() -> None:
         plan_ioc_changes(request, settings)
 
 
-def test_parameter_updates_cannot_change_structural_pin_keys() -> None:
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        ("Mcu.Pin0", "PB0"),
+        ("PA13.Signal", "GPIO_Output"),
+        ("PA13.GPIO_Label", "DEBUG_DATA"),
+        ("PA13.Locked", "false"),
+    ],
+)
+def test_parameter_updates_cannot_change_structural_pin_keys(key: str, value: str) -> None:
     settings = Settings(allowed_roots=(FIXTURE.parent.parent.resolve(),))
     request = IocPlanRequest(
         path=str(FIXTURE),
-        parameter_updates={"Mcu.Pin0": "PB0"},
+        parameter_updates={key: value},
     )
 
     with pytest.raises(ValueError, match="structured pin or peripheral"):
