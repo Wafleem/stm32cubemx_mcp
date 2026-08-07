@@ -2,10 +2,11 @@
 
 ## Responsibility boundary
 
-The MCP is not the multimodal reasoning system. The host agent interprets user
-requests, datasheets, schematics, pinout images, and existing source code. It
-passes a structured hardware intent to the MCP. The MCP then performs bounded,
-reproducible operations against local projects and STM32 tools.
+The Model Context Protocol (MCP) server is not the multimodal reasoning system.
+The host agent interprets user requests, datasheets, schematics, pinout images,
+and existing source code. It passes a structured hardware intent to the MCP.
+The MCP then performs bounded, reproducible operations against local projects
+and STM32 tools.
 
 This separation keeps the hard-to-test natural-language interpretation in the
 agent and puts state changes behind typed, testable contracts.
@@ -30,8 +31,9 @@ adapter layer. Domain and IOC logic must remain platform-neutral.
 
 ## Why `.ioc` transactions are necessary
 
-The supported CubeMX CLI can load an MCU or board, load/save an `.ioc`, select a
-toolchain, and generate a project. It does not provide commands for the full
+The supported CubeMX command-line interface (CLI) can load a microcontroller
+unit (MCU) or board. It can load and save an `.ioc` file. It can select a
+toolchain and generate a project. It does not provide commands for the full
 graphical pin and peripheral configurator. `.ioc` is therefore the practical
 configuration interchange, but it is not a stable public schema.
 
@@ -60,6 +62,20 @@ after the preview.
 Generation and building are separate operations. A valid `.ioc` should not
 implicitly overwrite a generated project, and successful generation should not
 be reported as a successful compile.
+
+## New IOC creation
+
+The IOC creation tool accepts a board identifier or MCU identifier. It does
+not accept a free-form CubeMX script. It uses this sequence:
+
+```text
+validate request -> create staging directory -> load board or MCU
+                 -> save IOC -> relocate staging paths -> validate IOC
+                 -> copy and verify IOC in the new output directory
+```
+
+The output directory must not exist. The tool removes the staging directory
+after a failure.
 
 ## New-project generation
 
@@ -111,6 +127,7 @@ Implemented foundation:
 - `cubemx_plan_ioc_changes(request)`
 - `cubemx_apply_ioc_changes(request)`
 - `cubemx_validate_ioc(path)`
+- `cubemx_create_ioc(request)`
 - `cubemx_generate_project(request)`
 - `cubemx_plan_regeneration(request)`
 
@@ -118,21 +135,26 @@ Planned configuration and execution tools:
 
 - `cubemx_plan_project(intent, existing_ioc=None)`
 - `cubemx_preview_plan(plan_id)`
-- `cubemx_build_project(project_path, configuration)`
+- `cubeide_build_project(request)`
+- `cubeprogrammer_list_probes()`
+- `cubeprogrammer_plan_flash(request)`
+- `cubeprogrammer_flash(request)`
 
 The intent format should describe capabilities rather than immediately forcing
-pins. For example, a UART request includes role, baud rate, flow control, DMA,
-interrupt, and preferred/forbidden pins. Pin assignment is a constraint result
-with an explanation, not free-form text.
+pins. For example, a universal asynchronous receiver-transmitter (UART)
+request includes role, baud rate, flow control, direct memory access (DMA),
+interrupt, and preferred or forbidden pins. Pin assignment is a constraint
+result with an explanation. It is not free-form text.
 
 ## First reference scenario
 
 The first end-to-end fixture will target an STM32F4 Nucleo board and exercise:
 
 - board/MCU selection;
-- SWD preservation;
+- Serial Wire Debug (SWD) preservation;
 - system clock configuration;
-- GPIO LED and button labels;
+- general-purpose input/output (GPIO) light-emitting diode (LED) and button
+  labels;
 - one UART with optional DMA;
 - STM32CubeIDE generation and build;
 - CMake generation as the second build path.

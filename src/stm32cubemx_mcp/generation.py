@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import shutil
 import tempfile
+import time
 from collections.abc import Callable
 from pathlib import Path
 
@@ -82,6 +83,20 @@ def relocate_text_paths(project_root: Path, source_root: Path, destination: Path
             relocated = relocated.replace(source, target)
         if relocated != text:
             path.write_text(relocated, encoding="utf-8")
+
+
+def promote_directory(source: Path, destination: Path) -> None:
+    """Move a staged directory and tolerate a completed Windows rename."""
+    for attempt in range(12):
+        try:
+            source.replace(destination)
+            return
+        except PermissionError:
+            if not source.exists() and destination.is_dir():
+                return
+            if attempt == 11:
+                raise
+            time.sleep(min(0.1 * (2**attempt), 0.5))
 
 
 def _generated_files(project_path: Path, limit: int = 500) -> list[str]:
@@ -181,9 +196,9 @@ def generate_project(
             shutil.copy2(staged_ioc, project_root / staged_ioc.name)
         relocate_text_paths(project_root, stage, destination)
         if project_root == stage:
-            stage.replace(destination)
+            promote_directory(stage, destination)
         else:
-            project_root.replace(destination)
+            promote_directory(project_root, destination)
         promoted = True
         return ProjectGenerationResult(
             succeeded=True,

@@ -74,7 +74,7 @@ class IocListResult(BaseModel):
 
 
 class IocPinAssignment(BaseModel):
-    pin: str = Field(description="MCU pin name, such as PA2.")
+    pin: str = Field(description="Microcontroller unit pin name, such as PA2.")
     signal: str = Field(description="CubeMX signal name, such as USART2_TX.")
     label: str | None = Field(default=None, description="Optional GPIO label.")
     locked: bool = Field(default=True, description="Lock the pin assignment in CubeMX.")
@@ -146,6 +146,39 @@ class IocValidationResult(BaseModel):
     valid: bool
     source_sha256: str
     roundtrip_sha256: str | None = None
+    cubemx: CubeMXProcessResult
+    diagnostics: list[Diagnostic] = Field(default_factory=list)
+
+
+class IocCreateRequest(BaseModel):
+    target_kind: Literal["board", "mcu"]
+    target: str = Field(
+        min_length=1,
+        max_length=100,
+        pattern=r"^[A-Za-z0-9_-]+$",
+        description="CubeMX board or microcontroller unit identifier.",
+    )
+    output_directory: str
+    project_name: str = Field(
+        min_length=1,
+        max_length=80,
+        pattern=r"^[A-Za-z0-9_.-]+$",
+    )
+    board_mode: Literal["allmodes", "nomode"] = "allmodes"
+    toolchain: Literal["STM32CubeIDE", "CMake"] = "STM32CubeIDE"
+
+
+class IocCreateResult(BaseModel):
+    succeeded: bool
+    ioc_path: str
+    project_path: str
+    project_name: str
+    target_kind: Literal["board", "mcu"]
+    target: str
+    board_mode: Literal["allmodes", "nomode"] | None = None
+    toolchain: Literal["STM32CubeIDE", "CMake"]
+    source_sha256: str | None = None
+    validation: IocValidationResult | None = None
     cubemx: CubeMXProcessResult
     diagnostics: list[Diagnostic] = Field(default_factory=list)
 

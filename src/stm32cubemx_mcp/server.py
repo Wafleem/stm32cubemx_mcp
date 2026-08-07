@@ -3,6 +3,7 @@ from __future__ import annotations
 from mcp.server import MCPServer
 
 from stm32cubemx_mcp.apply import apply_ioc_changes
+from stm32cubemx_mcp.creation import create_ioc
 from stm32cubemx_mcp.cubemx import validate_ioc_file
 from stm32cubemx_mcp.discovery import discover_environment
 from stm32cubemx_mcp.generation import generate_project
@@ -12,6 +13,8 @@ from stm32cubemx_mcp.models import (
     IocApplyRequest,
     IocApplyResult,
     IocChangePlan,
+    IocCreateRequest,
+    IocCreateResult,
     IocInspection,
     IocListResult,
     IocPlanRequest,
@@ -58,7 +61,7 @@ def cubemx_list_ioc(
 
 @mcp.tool()
 def cubemx_inspect_ioc(path: str) -> IocInspection:
-    """Inspect one IOC file and return structured project, MCU, peripheral, pin, and clock data."""
+    """Inspect one IOC file and return project, microcontroller, pin, and clock data."""
     return inspect_ioc(path, _settings())
 
 
@@ -78,6 +81,12 @@ def cubemx_apply_ioc_changes(request: IocApplyRequest) -> IocApplyResult:
 def cubemx_validate_ioc(path: str) -> IocValidationResult:
     """Load and save an IOC copy with STM32CubeMX. Do not change the source file."""
     return validate_ioc_file(path, _settings())
+
+
+@mcp.tool()
+def cubemx_create_ioc(request: IocCreateRequest) -> IocCreateResult:
+    """Create and validate one IOC file for a board or microcontroller in a new directory."""
+    return create_ioc(request, _settings())
 
 
 @mcp.tool()

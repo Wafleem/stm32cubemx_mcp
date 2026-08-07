@@ -1,19 +1,20 @@
 # STM32CubeMX MCP
 
-`stm32cubemx-mcp` is a local Model Context Protocol server that helps AI agents
-turn structured embedded-system requirements into safe, testable STM32CubeMX
-workflows.
+`stm32cubemx-mcp` is a local Model Context Protocol (MCP) server. It helps
+artificial intelligence (AI) agents turn structured embedded-system
+requirements into safe, testable STM32CubeMX workflows.
 
 Project documentation and user-facing text use ASD-STE100 Technical English.
 
-The agent analyzes datasheets, schematics, board photos, and user requirements.
+The agent analyzes microcontroller unit (MCU) datasheets, schematics, board
+photos, and user requirements.
 This server supplies the deterministic execution layer. It inspects the local
 toolchain and `.ioc` files. It validates paths and configuration state. It will
 also control CubeMX validation and project generation.
 
 > [!IMPORTANT]
 > The project is in early development. The current tools inspect, plan,
-> validate, and apply `.ioc` changes. The tools can generate a new
+> validate, create, and apply `.ioc` changes. The tools can generate a new
 > STM32CubeIDE project. They can also preview regeneration of an existing
 > project. CMake output and builds are the next implementation milestones.
 
@@ -27,6 +28,7 @@ Tool | Purpose | File effect
 `cubemx_plan_ioc_changes` | Preview pin, peripheral, parameter, and project changes. | Read-only
 `cubemx_apply_ioc_changes` | Validate and apply an approved IOC plan. | Creates a backup and replaces one IOC file
 `cubemx_validate_ioc` | Load and save a staged IOC copy with CubeMX. | Source file remains unchanged
+`cubemx_create_ioc` | Create and validate one IOC file for a board or MCU. | Creates one new directory
 `cubemx_generate_project` | Generate one new STM32CubeIDE project. | Creates one new project directory
 `cubemx_plan_regeneration` | Regenerate a temporary copy of an existing CubeIDE project. | Source project remains unchanged
 
@@ -43,8 +45,9 @@ flowchart LR
     G --> H["Structured diagnostics for the agent"]
 ```
 
-CubeMX's supported CLI loads MCUs, boards, and `.ioc` configurations and can
-generate STM32CubeIDE or CMake projects. It does not expose the complete
+The supported CubeMX command-line interface (CLI) loads MCUs, boards, and
+`.ioc` configurations. It can generate STM32CubeIDE or CMake projects. It does
+not expose the complete
 pin/peripheral editor as a command API. For that reason, this project treats
 `.ioc` changes as version-aware transactions and uses CubeMX as the validation
 and generation authority.
@@ -151,15 +154,23 @@ Example request:
 
 ```text
 This project uses an STM32F401RE on a NUCLEO-F401RE. Configure USART2 for
-115200 bit/s on PA2 and PA3. Preserve the SWD pins. Inspect and plan the change.
-Do not modify the IOC file until I approve the plan.
+115200 bit/s on PA2 and PA3. Preserve the Serial Wire Debug (SWD) pins. Inspect
+and plan the change. Do not modify the IOC file until I approve the plan.
 ```
 
-### 2. Inspect the environment and IOC file
+### 2. Create or inspect the IOC file
 
 Codex first calls `cubemx_environment`. It confirms the CubeMX path and the
-allowed roots. It can call `cubemx_list_ioc` if the IOC path is not known. It
-then calls `cubemx_inspect_ioc` to read the current project state.
+allowed roots.
+
+For a new project, Codex can call `cubemx_create_ioc`. The call selects one
+known board or microcontroller unit (MCU). It selects the project name,
+toolchain, and a new output directory. The server uses typed CubeMX commands.
+It validates the new IOC file before it makes the output directory available.
+
+For an existing project, Codex can call `cubemx_list_ioc` if the IOC path is
+not known. It then calls `cubemx_inspect_ioc` to read the current project
+state.
 
 The inspection result includes the source SHA-256 hash. This hash identifies
 the exact IOC content that Codex inspected.
@@ -291,7 +302,33 @@ Arguments:
 The result contains `valid`, source and round-trip hashes, the CubeMX process
 result, and diagnostics. The source IOC file remains unchanged.
 
-### IOC plan and apply calls
+### IOC creation, plan, and apply calls
+
+#### `cubemx_create_ioc`
+
+The tool has one `request` argument:
+
+```json
+{
+  "request": {
+    "target_kind": "board",
+    "target": "NUCLEO-F401RE",
+    "output_directory": "projects/f401-base",
+    "project_name": "f401_base",
+    "board_mode": "allmodes",
+    "toolchain": "STM32CubeIDE"
+  }
+}
+```
+
+Set `target_kind` to `board` or `mcu`. Use the exact CubeMX board or MCU
+identifier in `target`. `board_mode` can be `allmodes` or `nomode`. The
+toolchain can be `STM32CubeIDE` or `CMake`. The output directory must not
+exist.
+
+The result contains the IOC path, project path, target, toolchain, source
+hash, validation result, CubeMX process result, and diagnostics. The server
+removes the staged directory if creation or validation fails.
 
 #### `cubemx_plan_ioc_changes`
 
@@ -324,9 +361,11 @@ The tool has one `request` argument:
 }
 ```
 
-Use exact CubeMX IOC keys in `parameter_updates`. Do not guess these keys.
-`toolchain` can be `STM32CubeIDE`, `CMake`, or `null`. Debug-pin changes are
-blocked unless `allow_debug_pin_change` is `true`.
+Use exact CubeMX IOC keys in `parameter_updates`. Do not guess these keys. Use
+`pin_assignments` for pin signals, labels, and lock states. The server rejects
+these pin properties in `parameter_updates`. `toolchain` can be
+`STM32CubeIDE`, `CMake`, or `null`. Debug-pin changes are blocked unless
+`allow_debug_pin_change` is `true`.
 
 The result contains `plan_id`, `source_sha256`, `planned_sha256`, `changes`,
 `unified_diff`, `validation_status`, and `diagnostics`.

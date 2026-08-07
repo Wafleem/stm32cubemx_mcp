@@ -2,7 +2,7 @@ import hashlib
 import shutil
 from pathlib import Path
 
-from stm32cubemx_mcp.generation import generate_project
+from stm32cubemx_mcp.generation import generate_project, promote_directory
 from stm32cubemx_mcp.models import (
     CubeMXProcessResult,
     Diagnostic,
@@ -149,3 +149,23 @@ def test_generate_project_rejects_existing_output_directory(tmp_path: Path) -> N
         assert "already exists" in str(error)
     else:
         raise AssertionError("Generation accepted an existing output directory.")
+
+
+def test_promote_directory_accepts_a_completed_windows_rename(
+    tmp_path: Path, monkeypatch
+) -> None:
+    source = tmp_path / "stage"
+    destination = tmp_path / "output"
+    source.mkdir()
+    original_replace = Path.replace
+
+    def move_then_report_permission_error(path: Path, target: Path) -> Path:
+        original_replace(path, target)
+        raise PermissionError("The Windows rename reported a late error.")
+
+    monkeypatch.setattr(Path, "replace", move_then_report_permission_error)
+
+    promote_directory(source, destination)
+
+    assert destination.is_dir()
+    assert not source.exists()

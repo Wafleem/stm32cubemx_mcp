@@ -1,6 +1,6 @@
 ---
 name: configure-stm32cubemx
-description: Inspect, plan, validate, and generate STM32CubeMX IOC and STM32CubeIDE projects through the stm32cubemx MCP tools. Use for STM32 .ioc settings, pin assignments, peripherals, clocks, project settings, CubeMX validation, new CubeIDE generation, or existing-project regeneration previews.
+description: Create, inspect, plan, validate, and generate STM32CubeMX IOC and STM32CubeIDE projects through the stm32cubemx Model Context Protocol (MCP) tools. Use for new board or microcontroller unit (MCU) IOC files, STM32 .ioc settings, pin assignments, peripherals, clocks, project settings, CubeMX validation, new CubeIDE generation, or existing-project regeneration previews.
 ---
 
 # Configure STM32CubeMX
@@ -13,26 +13,29 @@ structured tool call.
 
 1. Call `cubemx_environment`. Confirm that CubeMX is available. Review the
    allowed roots.
-2. Call `cubemx_list_ioc` when the IOC path is not known. Call
+2. Call `cubemx_create_ioc` for a new board or MCU configuration. Use the
+   exact CubeMX identifier. Use only a new output directory.
+3. Call `cubemx_list_ioc` when an existing IOC path is not known. Call
    `cubemx_inspect_ioc` before you plan a change to an existing IOC file.
-3. Resolve the requested MCU functions and pins from the available technical
+4. Resolve the requested MCU functions and pins from the available technical
    evidence. Do not state that the MCP read a datasheet or schematic.
-4. Call `cubemx_plan_ioc_changes`. Use `pin_assignments` and
+5. Call `cubemx_plan_ioc_changes`. Use `pin_assignments` and
    `enabled_peripherals` for structural changes. Use `parameter_updates` only
    for known IOC parameter keys.
-5. Show the planned changes, diagnostics, and source hash. Get user approval
+6. Show the planned changes, diagnostics, and source hash. Get user approval
    before you call `cubemx_apply_ioc_changes`, unless the user already gave
    explicit approval for that exact plan.
-6. Apply the same plan request with `expected_source_sha256` from the approved
+7. Apply the same plan request with `expected_source_sha256` from the approved
    plan. Keep CubeMX validation enabled. Do not set `skip_cubemx_validation`
    unless the user explicitly requests the bypass and accepts the risk.
-7. Use `cubemx_generate_project` only for a new output directory. Use
+8. Use `cubemx_generate_project` only for a new output directory. Use
    `cubemx_plan_regeneration` for an existing STM32CubeIDE project.
 
 ## Safety rules
 
-- Preserve PA13 and PA14 SWD signals unless the user explicitly approves their
-  reassignment.
+- Preserve PA13 and PA14 Serial Wire Debug (SWD) signals unless the user
+  explicitly approves their reassignment.
+- Do not use `parameter_updates` for pin signals, labels, or lock states.
 - Stop if the source hash changes after the preview.
 - Treat IOC validation, project generation, and compilation as different
   results.

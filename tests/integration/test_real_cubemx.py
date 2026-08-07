@@ -4,10 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from stm32cubemx_mcp.cubemx import run_cubemx_script, validate_ioc_content
+from stm32cubemx_mcp.creation import create_ioc
 from stm32cubemx_mcp.discovery import discover_environment
 from stm32cubemx_mcp.generation import generate_project
 from stm32cubemx_mcp.models import (
+    IocCreateRequest,
     IocValidationResult,
     ProjectGenerationRequest,
     RegenerationPlanRequest,
@@ -24,10 +25,6 @@ pytestmark = [
 ]
 
 
-def _quoted(path: Path) -> str:
-    return f'"{path}"'
-
-
 def test_create_and_validate_nucleo_f401re_ioc(tmp_path: Path) -> None:
     settings = Settings.from_env()
     if not discover_environment(settings).cubemx:
@@ -35,21 +32,21 @@ def test_create_and_validate_nucleo_f401re_ioc(tmp_path: Path) -> None:
 
     project_path = tmp_path / "nucleo_f401re"
     ioc_path = project_path / "nucleo_f401re.ioc"
-    project_path.mkdir()
-    create_commands = [
-        "loadboard NUCLEO-F401RE allmodes",
-        "project name nucleo_f401re",
-        "project toolchain STM32CubeIDE",
-        f"project path {_quoted(project_path)}",
-        f"config saveas {_quoted(ioc_path)}",
-        "exit",
-    ]
+    creation_settings = replace(settings, allowed_roots=(tmp_path.resolve(),))
+    creation = create_ioc(
+        IocCreateRequest(
+            target_kind="board",
+            target="NUCLEO-F401RE",
+            output_directory=str(project_path),
+            project_name="nucleo_f401re",
+        ),
+        creation_settings,
+    )
 
-    create_result = run_cubemx_script(create_commands, settings, project_path)
-
-    assert create_result.succeeded, create_result.stderr or create_result.stdout[-4000:]
+    assert creation.succeeded, creation.diagnostics
     assert ioc_path.is_file()
-    validation = validate_ioc_content(ioc_path, ioc_path.read_bytes(), settings)
+    assert creation.validation is not None
+    validation = creation.validation
     diagnostic_codes = [item.code for item in validation.diagnostics]
     assert validation.valid, diagnostic_codes
 

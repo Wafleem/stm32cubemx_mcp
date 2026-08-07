@@ -1,7 +1,7 @@
 {
   "name": "stm32cubemx-mcp",
-  "version": "0.1.0+codex.20260806234906",
-  "description": "Use safe STM32CubeMX IOC and project tools from Codex.",
+  "version": "0.2.0+codex.20260807014412",
+  "description": "Create, inspect, validate, and generate STM32CubeMX projects from Codex.",
   "author": {
     "name": "stm32cubemx-mcp contributors",
     "url": "https://github.com/Wafleem"
@@ -21,7 +21,7 @@
   "interface": {
     "displayName": "STM32CubeMX MCP",
     "shortDescription": "Inspect, plan, validate, and generate STM32 projects.",
-    "longDescription": "Connect Codex to a local STM32CubeMX installation. Inspect IOC files, preview pin changes, validate configurations, and generate STM32CubeIDE projects.",
+    "longDescription": "Connect Codex to a local STM32CubeMX installation. Create and inspect IOC files, preview pin changes, validate configurations, and generate STM32CubeIDE projects.",
     "developerName": "stm32cubemx-mcp contributors",
     "category": "Developer Tools",
     "capabilities": [
@@ -31,6 +31,7 @@
     "websiteURL": "https://github.com/Wafleem/stm32cubemx_mcp",
     "defaultPrompt": [
       "Inspect my STM32 IOC file and explain its configuration.",
+      "Create a validated IOC file for my STM32 board.",
       "Plan a safe STM32 pin and peripheral change.",
       "Validate and generate my STM32CubeIDE project."
     ],
