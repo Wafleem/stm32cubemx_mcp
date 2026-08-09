@@ -34,13 +34,21 @@ def _valid_validator(source_path: Path, content: bytes, settings: Settings) -> I
 def _regeneration_runner(
     commands: list[str], settings: Settings, work_directory: Path
 ) -> CubeMXProcessResult:
-    del commands, settings
-    main = work_directory / "Core" / "Src" / "main.c"
+    del settings
+    project_name = next(item for item in commands if item.startswith("project name ")).split()[-1]
+    project_path = Path(
+        next(item for item in commands if item.startswith("project path ")).split('"', maxsplit=2)[
+            1
+        ]
+    )
+    assert project_path == work_directory
+    project_root = work_directory / project_name
+    main = project_root / "Core" / "Src" / "main.c"
     main.write_text(main.read_text(encoding="utf-8") + "// regenerated\n", encoding="utf-8")
-    (work_directory / "Core" / "Src" / "gpio.c").write_text(
+    (project_root / "Core" / "Src" / "gpio.c").write_text(
         "void MX_GPIO_Init(void) {}\n", encoding="utf-8"
     )
-    (work_directory / "Core" / "Src" / "obsolete.c").unlink()
+    (project_root / "Core" / "Src" / "obsolete.c").unlink()
     return CubeMXProcessResult(
         succeeded=True,
         exit_code=0,
@@ -82,6 +90,7 @@ def test_regeneration_plan_reports_file_changes_without_source_writes(
     assert changes["Core/Src/gpio.c"].change == "added"
     assert changes["Core/Src/obsolete.c"].change == "deleted"
     assert "+// regenerated" in changes["Core/Src/main.c"].unified_diff
+    assert not any(item.path.startswith("nucleo_f401re/") for item in plan.changes)
     assert snapshot_project(project, settings) == source_before
     assert not list(tmp_path.glob(".*-regeneration-*"))
     assert [item.code for item in plan.diagnostics] == ["regeneration.preview_only"]

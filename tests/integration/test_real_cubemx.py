@@ -65,7 +65,8 @@ def test_create_and_validate_nucleo_f401re_ioc(tmp_path: Path) -> None:
     generation_codes = [item.code for item in generation.diagnostics]
     assert generation.succeeded, generation_codes
     project_root = Path(generation.project_path)
-    assert project_root == generated_path
+    assert Path(generation.output_directory) == generated_path
+    assert project_root.is_relative_to(generated_path)
     assert (project_root / ".project").is_file()
     assert (project_root / ".cproject").is_file()
     assert any(path.endswith(".ioc") for path in generation.generated_files)
@@ -74,7 +75,7 @@ def test_create_and_validate_nucleo_f401re_ioc(tmp_path: Path) -> None:
     assert any(path.name.startswith("core_cm") for path in generated_path.rglob("core_cm*.h"))
     assert any(path.name.endswith("_hal.c") for path in generated_path.rglob("*_hal.c"))
     assert not validate_generated_project(generated_path, project_root, "nucleo_f401re_app")
-    generated_ioc = generated_path / "nucleo_f401re_app.ioc"
+    generated_ioc = project_root / "nucleo_f401re_app.ioc"
     inspection = inspect_ioc(generated_ioc, generation_settings)
     assert inspection.summary.project_name == "nucleo_f401re_app"
     assert inspection.summary.toolchain == "STM32CubeIDE"
@@ -95,6 +96,7 @@ def test_create_and_validate_nucleo_f401re_ioc(tmp_path: Path) -> None:
     assert regeneration.cubemx.succeeded
     assert regeneration.source_manifest_sha256
     assert regeneration.planned_manifest_sha256
+    assert not any(change.path.startswith("nucleo_f401re_app/") for change in regeneration.changes)
     assert snapshot_project(project_root, generation_settings) == source_before
     assert not (project_root / "roundtrip" / "roundtrip.ioc").exists()
     assert not list(tmp_path.glob(".*-regeneration-*"))

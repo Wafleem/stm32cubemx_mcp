@@ -280,11 +280,11 @@ def plan_project_regeneration(
     if not _PROJECT_NAME.fullmatch(project_name):
         raise ValueError(f"The CubeMX project name is invalid: {project_name}")
 
-    with tempfile.TemporaryDirectory(
-        prefix=f".{project.name}-regeneration-", dir=project.parent
-    ) as container_name:
+    with tempfile.TemporaryDirectory(prefix=f"{project.name}-regeneration-") as container_name:
         container = Path(container_name)
-        stage = container / "project"
+        generation_parent = container / "generation"
+        generation_parent.mkdir()
+        stage = generation_parent / project_name
         current_before_copy = snapshot_project(project, settings)
         if current_before_copy != before:
             return _failed_plan(
@@ -357,8 +357,8 @@ def plan_project_regeneration(
             )
 
         staged_ioc = stage / ioc_path.relative_to(project)
-        commands = build_generation_script(staged_ioc, stage, project_name)
-        process = script_runner(commands, settings, stage)
+        commands = build_generation_script(staged_ioc, generation_parent, project_name)
+        process = script_runner(commands, settings, generation_parent)
         if not process.succeeded:
             return _failed_plan(
                 project=project,
@@ -381,6 +381,7 @@ def plan_project_regeneration(
             )
 
         relocate_text_paths(stage, stage, project)
+        relocate_text_paths(stage, generation_parent, project.parent)
         after = snapshot_project(stage, settings)
         after_sha256 = _manifest_sha256(after)
         current = snapshot_project(project, settings)
