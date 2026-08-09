@@ -94,6 +94,11 @@ The tool preserves the complete container. It returns the container path and
 the Eclipse project path as separate fields. The tool removes the staging
 directory after a failure. It does not change the source IOC file.
 
+Round-trip validation uses a temporary save-as filename. CubeMX can set the
+temporary internal project name and filename from this save-as target. The
+round-trip check permits these two changes. The generated-project check still
+requires the requested project identity.
+
 ## Existing-project regeneration preview
 
 The preview tool creates content manifests before and after staged regeneration.
@@ -111,6 +116,11 @@ The tool does not copy build-output directories or Git metadata. It rejects
 symbolic links and Windows reparse points. It also applies configurable file
 count and project size limits. A source-change diagnostic identifies each
 added, modified, or deleted path.
+
+CubeMX appends the internal project name to its project path. The preview
+therefore stages the project below a temporary parent and passes the parent to
+CubeMX. This layout regenerates the staged project root. It does not create a
+second nested project.
 
 ## Path and process safety
 

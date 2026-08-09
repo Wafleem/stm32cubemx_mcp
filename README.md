@@ -219,6 +219,11 @@ name. It selects the current CubeMX toolchain key when that key is available.
 It also requests a project below one root directory. These staged changes do
 not change the source IOC file.
 
+CubeMX can change the internal project name and filename when validation saves
+a temporary `roundtrip.ioc` file. The round-trip check permits these two
+temporary identity changes. The generated-project check still requires the
+requested IOC filename and internal project identity.
+
 The `output_directory` result identifies the complete generated container. The
 `project_path` result identifies the Eclipse project root. These paths are
 usually equal. They can be different when CubeMX creates nested Eclipse
@@ -229,6 +234,10 @@ copies the project before validation. It validates the IOC file in an isolated
 temporary directory. It then regenerates the copy and reports added, modified,
 and deleted files. It checks the source project after each phase. It does not
 change the source project.
+
+The preview stages the project below a temporary generation parent. It passes
+that parent to CubeMX. This layout prevents CubeMX from creating a second
+nested copy of the project.
 
 The current server does not apply an existing-project regeneration plan. It
 also does not compile a project. Treat IOC validation, project generation, and

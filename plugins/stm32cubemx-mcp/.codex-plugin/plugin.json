@@ -1,6 +1,6 @@
 {
   "name": "stm32cubemx-mcp",
-  "version": "0.3.0+codex.20260807172215",
+  "version": "0.3.1+codex.20260809192539",
   "description": "Create, inspect, validate, and generate STM32CubeMX projects from Codex.",
   "author": {
     "name": "stm32cubemx-mcp contributors",

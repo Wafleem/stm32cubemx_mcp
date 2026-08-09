@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "stm32cubemx-mcp"
-version = "0.3.0"
+version = "0.3.1"
 description = "An MCP server for safe, agent-driven STM32CubeMX workflows"
 readme = "README.md"
 requires-python = ">=3.11"
