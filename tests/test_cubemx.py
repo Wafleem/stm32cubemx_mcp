@@ -46,6 +46,27 @@ def _mismatch_runner(
     )
 
 
+def _saveas_identity_runner(
+    commands: list[str], settings: Settings, work_directory: Path
+) -> CubeMXProcessResult:
+    del settings, work_directory
+    source = _path_from_script_command(commands[0]).read_text(encoding="utf-8")
+    output = source.replace(
+        "ProjectManager.ProjectFileName=nucleo_f401re.ioc",
+        "ProjectManager.ProjectFileName=roundtrip.ioc",
+    ).replace(
+        "ProjectManager.ProjectName=nucleo_f401re",
+        "ProjectManager.ProjectName=roundtrip",
+    )
+    _path_from_script_command(commands[2]).write_text(output, encoding="utf-8")
+    return CubeMXProcessResult(
+        succeeded=True,
+        exit_code=0,
+        duration_seconds=0.01,
+        stdout="OK\nOK\n",
+    )
+
+
 def test_build_cubemx_command_uses_quiet_script_mode(tmp_path: Path) -> None:
     executable = ExecutableInfo(
         name="STM32CubeMX",
@@ -118,6 +139,22 @@ def test_validate_ioc_content_accepts_preserved_settings(tmp_path: Path) -> None
 
     assert result.valid
     assert result.roundtrip_sha256 == result.source_sha256
+
+
+def test_validate_ioc_content_accepts_saveas_identity_changes(tmp_path: Path) -> None:
+    source_path = tmp_path / FIXTURE.name
+    shutil.copy2(FIXTURE, source_path)
+    settings = Settings(allowed_roots=(tmp_path,))
+
+    result = validate_ioc_content(
+        source_path,
+        source_path.read_bytes(),
+        settings,
+        script_runner=_saveas_identity_runner,
+    )
+
+    assert result.valid
+    assert not [item for item in result.diagnostics if item.code == "ioc.roundtrip_mismatch"]
 
 
 def test_validate_ioc_content_rejects_changed_required_setting(tmp_path: Path) -> None:

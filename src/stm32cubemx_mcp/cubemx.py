@@ -163,6 +163,8 @@ def run_cubemx_script(
 
 
 def _default_required_entries(document: IocDocument) -> dict[str, str]:
+    # CubeMX can set the project name and filename from the save-as target.
+    # Generation validates the requested identity in the generated IOC file.
     required: dict[str, str] = {}
     for key, value in document.entries.items():
         is_required = (
@@ -170,8 +172,6 @@ def _default_required_entries(document: IocDocument) -> dict[str, str]:
             in {
                 "Mcu.CPN",
                 "Mcu.Name",
-                "ProjectManager.ProjectFileName",
-                "ProjectManager.ProjectName",
                 "ProjectManager.TargetToolchain",
                 "ProjectManager.ToolChain",
                 "ProjectManager.UnderRoot",
