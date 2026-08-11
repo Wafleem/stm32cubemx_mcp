@@ -1,5 +1,9 @@
 # STM32CubeMX MCP
 
+[![CI](https://github.com/Wafleem/stm32cubemx_mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/Wafleem/stm32cubemx_mcp/actions/workflows/ci.yml)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 `stm32cubemx-mcp` is a local Model Context Protocol (MCP) server. It helps
 artificial intelligence (AI) agents turn structured embedded-system
 requirements into safe, testable STM32CubeMX workflows.
@@ -7,16 +11,80 @@ requirements into safe, testable STM32CubeMX workflows.
 Project documentation and user-facing text use ASD-STE100 Technical English.
 
 The agent analyzes microcontroller unit (MCU) datasheets, schematics, board
-photos, and user requirements.
-This server supplies the deterministic execution layer. It inspects the local
-toolchain and `.ioc` files. It validates paths and configuration state. It will
-also control CubeMX validation and project generation.
+photos, and user requirements. The server supplies the deterministic execution
+layer. It inspects the local toolchain and STM32CubeMX IOC files. It validates
+paths and configuration state. It also controls CubeMX validation and project
+generation.
 
 > [!IMPORTANT]
-> The project is in early development. The current tools inspect, plan,
-> validate, create, and apply `.ioc` changes. The tools can generate a new
-> STM32CubeIDE project. They can also preview regeneration of an existing
-> project. CMake output and builds are the next implementation milestones.
+> The project is in early development. It can create and edit IOC files. It can
+> generate a new STM32CubeIDE project. It can preview regeneration of an
+> existing STM32CubeIDE project. CMake project generation is planned. Build,
+> flash, and debug tools are also planned.
+
+## What you can do now
+
+Use the Codex plugin to complete these workflows:
+
+Use case | Current support | Safety behavior
+--- | --- | ---
+Create a new IOC file | Select a board or microcontroller unit (MCU), project name, and toolchain. | Uses a new directory and validates the IOC file with CubeMX.
+Edit an existing IOC file | Change pins, signals, labels, peripherals, known parameters, project name, or toolchain. | Shows a plan and source hash before it changes the file. It creates a backup before replacement.
+Generate a new project | Generate a complete STM32CubeIDE project from an IOC file. | Uses a temporary directory. It publishes the output only after validation.
+Preview existing-project regeneration | Compare a regenerated copy with the source STM32CubeIDE project. | Reports file differences. It does not change the source project.
+
+The server does not edit arbitrary C or C++ application code. It does not
+compile, flash, or debug a project.
+
+## Quick start with Codex
+
+Install the server and plugin. Then start a new Codex task from the embedded
+project directory. Give Codex the applicable datasheet, schematic, board image,
+IOC file, and requirements.
+
+### Create a new IOC file and STM32CubeIDE project
+
+```text
+Use the installed STM32CubeMX plugin. Create an IOC file for NUCLEO-F401RE.
+Configure USART2 on PA2 and PA3 for 115200 bit/s. Preserve the Serial Wire
+Debug pins. Show the planned configuration before you apply it. After approval,
+generate a new STM32CubeIDE project in a new output directory. Do not compile
+or flash the project.
+```
+
+### Edit an existing IOC file
+
+```text
+Use the installed STM32CubeMX plugin. Inspect board.ioc. Plan a change that
+configures PA5 as a labeled GPIO output and preserves PA13 and PA14 for Serial
+Wire Debug. Show the changed IOC keys, text difference, diagnostics, and source
+SHA-256 hash. Do not apply the plan until I approve it.
+```
+
+### Generate from an existing IOC file
+
+```text
+Use the installed STM32CubeMX plugin. Validate board.ioc. Generate a new
+STM32CubeIDE project in generated/board-app. Report output_directory,
+project_path, the source hash, generated-file count, and diagnostics. Do not
+modify board.ioc. Do not compile the project.
+```
+
+The agent uses this safe sequence for an IOC edit:
+
+```text
+inspect -> plan -> show difference and source hash -> get approval
+        -> validate staged IOC -> create backup -> replace IOC
+        -> generate a new project when requested
+```
+
+## Planned capabilities
+
+- Generate a CMake project from an IOC file.
+- Configure and build a generated CMake project.
+- Build an STM32CubeIDE project with the headless interface.
+- List debug probes and plan a flash operation with STM32CubeProgrammer.
+- Flash only after a separate explicit approval.
 
 ## Current MCP tools
 
@@ -41,16 +109,17 @@ flowchart LR
     C --> D["MCP: plan and preview IOC changes"]
     D --> E["MCP: transactional apply"]
     E --> F["CubeMX CLI: validate and generate"]
-    F --> G["CubeIDE or CMake: build"]
+    F --> G["New STM32CubeIDE project"]
     G --> H["Structured diagnostics for the agent"]
+    H -.-> I["Planned: CubeIDE or CMake build"]
 ```
 
-The supported CubeMX command-line interface (CLI) loads MCUs, boards, and
-`.ioc` configurations. It can generate STM32CubeIDE or CMake projects. It does
-not expose the complete
-pin/peripheral editor as a command API. For that reason, this project treats
-`.ioc` changes as version-aware transactions and uses CubeMX as the validation
-and generation authority.
+The supported CubeMX command-line interface (CLI) loads MCUs, boards, and IOC
+configurations. CubeMX can generate STM32CubeIDE or CMake projects. The current
+MCP generation tool supports STM32CubeIDE only. It does not expose the complete
+pin and peripheral editor as a command API. For that reason, this project treats
+IOC changes as version-aware transactions and uses CubeMX as the validation and
+generation authority.
 
 See [Architecture](docs/architecture.md) for the safety model and planned tool
 contract.
@@ -509,7 +578,8 @@ directly.
 
 - Python 3.11 or newer
 - STM32CubeMX for generation and validation features
-- STM32CubeIDE and/or a CMake ARM toolchain for build features
+- STM32CubeIDE for current project-generation workflows
+- A CMake Arm toolchain when planned CMake generation and build support is available
 
 Windows is the first development platform. macOS on Apple silicon is a target
 platform and is represented in the platform abstraction and CI matrix. The
