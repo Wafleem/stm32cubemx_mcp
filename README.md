@@ -122,7 +122,8 @@ IOC changes as version-aware transactions and uses CubeMX as the validation and
 generation authority.
 
 See [Architecture](docs/architecture.md) for the safety model and planned tool
-contract.
+contract. See the [first-principles study guide](docs/study-guide.md) to rebuild
+the main MCP layers in a separate learning project.
 
 ## Codex plugin
 
