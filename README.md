@@ -191,6 +191,36 @@ files. Report the CubeMX path, Java path, operating system, allowed roots, and
 diagnostics.
 ```
 
+### Install on macOS
+
+Install `uv` and the Python MCP server:
+
+```bash
+brew install uv
+uv tool install git+https://github.com/Wafleem/stm32cubemx_mcp.git
+```
+
+Use an absolute server path. Set the allowed root to the STM32 project
+directory:
+
+```bash
+server_path="$(uv tool dir --bin)/stm32cubemx-mcp"
+project_root="/absolute/path/to/stm32-project"
+codex mcp add stm32cubemx \
+  --env "CUBEMX_MCP_ALLOWED_ROOTS=${project_root}" \
+  --env "CUBEMX_MCP_CUBEMX_TIMEOUT_SECONDS=240" \
+  -- "${server_path}"
+codex mcp get stm32cubemx
+```
+
+The server discovers native Apple silicon STM32CubeMX applications in the
+standard `/Applications/STMicroelectronics` and `/Applications` locations.
+Set `CUBEMX_MCP_CUBEMX_PATH` in the MCP configuration when the application is
+in a different location.
+
+Close Codex after the installation. Open Codex again and start a new task. Use
+`/mcp` to confirm that the `stm32cubemx` server is connected.
+
 ### Update the installation
 
 Update the Python server when a runtime release is available:
@@ -582,10 +612,10 @@ directly.
 - STM32CubeIDE for current project-generation workflows
 - A CMake Arm toolchain when planned CMake generation and build support is available
 
-Windows is the first development platform. macOS on Apple silicon is a target
-platform and is represented in the platform abstraction and CI matrix. The
-current Codex plugin launcher supports Windows. macOS users must configure the
-MCP executable path manually until the macOS plugin launcher is available.
+Windows and macOS on Apple silicon are represented in the platform abstraction
+and continuous integration matrix. The Codex marketplace launcher supports
+Windows. macOS uses a direct Codex MCP configuration with an absolute server
+path.
 
 ## Development setup
 

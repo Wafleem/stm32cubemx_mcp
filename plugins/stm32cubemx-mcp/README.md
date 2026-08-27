@@ -26,8 +26,21 @@ codex plugin add stm32cubemx-mcp@wafleem-stm32
 
 Start a new Codex task. Use `/mcp` to check the `stm32cubemx` connection.
 
-The automatic plugin launcher currently supports Windows. macOS support is a
-planned platform checkpoint.
+The automatic plugin launcher supports Windows. On macOS, install the server
+with `uv` and add it directly to the shared Codex MCP configuration:
+
+```bash
+brew install uv
+uv tool install git+https://github.com/Wafleem/stm32cubemx_mcp.git
+server_path="$(uv tool dir --bin)/stm32cubemx-mcp"
+project_root="/absolute/path/to/stm32-project"
+codex mcp add stm32cubemx \
+  --env "CUBEMX_MCP_ALLOWED_ROOTS=${project_root}" \
+  --env "CUBEMX_MCP_CUBEMX_TIMEOUT_SECONDS=240" \
+  -- "${server_path}"
+```
+
+Restart Codex after this command. Use `/mcp` to check the connection.
 
 ## Development installation
 
