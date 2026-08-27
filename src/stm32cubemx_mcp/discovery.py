@@ -47,7 +47,6 @@ def _cubemx_candidates(settings: Settings, system_name: str) -> list[Path]:
         ]
         for app_root in app_roots:
             candidates.append(app_root / "Contents/MacOS/STM32CubeMX")
-            candidates.append(app_root / "Contents/MacOs/STM32CubeMX")
 
     path_match = shutil.which("STM32CubeMX") or shutil.which("stm32cubemx")
     if path_match:

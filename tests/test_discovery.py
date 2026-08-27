@@ -57,3 +57,4 @@ def test_macos_bundle_reports_version_and_native_launcher(tmp_path: Path) -> Non
     match = next(item for item in report.cubemx if item.path == str(launcher))
     assert match.version == "6.18"
     assert match.invocation_prefix == [str(launcher)]
+    assert sum(item.path == str(launcher) for item in report.cubemx) == 1
