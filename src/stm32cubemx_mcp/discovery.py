@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import platform
+import plistlib
 import re
 import shutil
 import sys
@@ -38,7 +39,9 @@ def _cubemx_candidates(settings: Settings, system_name: str) -> list[Path]:
         )
     elif system_name == "Darwin":
         app_roots = [
+            Path("/Applications/STMicroelectronics/STM32CubeMX.app"),
             Path("/Applications/STMicroelectronics/STM32Cube/STM32CubeMX/STM32CubeMX.app"),
+            Path("/Applications/STMicroelectronics/STM32CubeMX/STM32CubeMX.app"),
             Path("/Applications/STM32CubeMX.app"),
             Path.home() / "Applications/STM32CubeMX.app",
         ]
@@ -81,6 +84,25 @@ def _version_from_path(path: Path) -> str | None:
     return match.group(1) if match else None
 
 
+def _version_from_macos_bundle(path: Path) -> str | None:
+    app_root = next((parent for parent in (path, *path.parents) if parent.suffix == ".app"), None)
+    if app_root is None:
+        return None
+
+    info_path = app_root / "Contents" / "Info.plist"
+    try:
+        with info_path.open("rb") as info_file:
+            info = plistlib.load(info_file)
+    except (OSError, plistlib.InvalidFileException):
+        return None
+
+    for key in ("CFBundleShortVersionString", "CFBundleVersion"):
+        value = info.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
 def _cubemx_info(path: Path, system_name: str) -> ExecutableInfo:
     if system_name == "Windows":
         java = path.parent / "jre" / "bin" / "java.exe"
@@ -91,7 +113,8 @@ def _cubemx_info(path: Path, system_name: str) -> ExecutableInfo:
         name="STM32CubeMX",
         available=True,
         path=str(path),
-        version=_version_from_path(path),
+        version=_version_from_path(path)
+        or (_version_from_macos_bundle(path) if system_name == "Darwin" else None),
         invocation_prefix=invocation,
     )
 
