@@ -1,7 +1,7 @@
 import plistlib
 from pathlib import Path
 
-from stm32cubemx_mcp.discovery import _cubemx_candidates, discover_environment
+from stm32cubemx_mcp.discovery import _cubemx_candidates, _deduplicate, discover_environment
 from stm32cubemx_mcp.settings import Settings
 
 
@@ -28,6 +28,13 @@ def test_environment_reports_configured_roots(tmp_path: Path) -> None:
     assert report.operating_system == "TestOS"
     assert report.architecture == "test-arch"
     assert report.allowed_roots == [str(tmp_path)]
+
+
+def test_discovery_deduplicates_canonical_paths(tmp_path: Path) -> None:
+    launcher = tmp_path / "STM32CubeMX"
+    equivalent = tmp_path / "nested" / ".." / "STM32CubeMX"
+
+    assert _deduplicate([launcher, equivalent]) == [launcher]
 
 
 def test_macos_candidates_include_stmicroelectronics_application_path(tmp_path: Path) -> None:

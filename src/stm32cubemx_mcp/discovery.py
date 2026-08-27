@@ -17,7 +17,7 @@ def _deduplicate(paths: Iterable[Path]) -> list[Path]:
     result: list[Path] = []
     seen: set[str] = set()
     for path in paths:
-        key = os.path.normcase(str(path))
+        key = os.path.normcase(str(path.expanduser().resolve(strict=False)))
         if key not in seen:
             seen.add(key)
             result.append(path)
