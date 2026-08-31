@@ -221,6 +221,45 @@ in a different location.
 Close Codex after the installation. Open Codex again and start a new task. Use
 `/mcp` to confirm that the `stm32cubemx` server is connected.
 
+#### macOS discovery implementation
+
+The macOS discovery layer resolves the native executable inside each
+`STM32CubeMX.app` bundle. It does not start the Windows executable or pass the
+macOS application bundle to Java.
+
+Discovery uses this order:
+
+1. Read the launcher set by `CUBEMX_MCP_CUBEMX_PATH`.
+2. Check the STMicroelectronics application directories below `/Applications`.
+3. Check `/Applications/STM32CubeMX.app` and
+   `~/Applications/STM32CubeMX.app`.
+4. Check the process `PATH` for `STM32CubeMX` or `stm32cubemx`.
+
+For an application bundle, the server invokes
+`Contents/MacOS/STM32CubeMX`. It reads `Contents/Info.plist` to report the
+installed CubeMX version. It resolves candidate paths before it removes
+duplicates. This behavior prevents one installation from appearing more than
+once when an explicit path and a standard application path refer to the same
+launcher.
+
+Use this read-only prompt after a Codex restart:
+
+```text
+Use the installed STM32CubeMX plugin. Call cubemx_environment. Do not modify
+files. Report the CubeMX launcher path, version, invocation prefix, operating
+system, architecture, allowed roots, and diagnostics.
+```
+
+For the standard ST installer layout, the reported launcher is:
+
+```text
+/Applications/STMicroelectronics/STM32CubeMX.app/Contents/MacOS/STM32CubeMX
+```
+
+The automated discovery tests cover the ST application path, native launcher
+selection, bundle version extraction, explicit-path precedence, and canonical
+path deduplication. The current macOS test run passes 57 tests.
+
 ### Update the installation
 
 Update the Python server when a runtime release is available:
