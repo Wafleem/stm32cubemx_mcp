@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import platform
+import plistlib
 import re
 import shutil
 import sys
@@ -16,7 +17,7 @@ def _deduplicate(paths: Iterable[Path]) -> list[Path]:
     result: list[Path] = []
     seen: set[str] = set()
     for path in paths:
-        key = os.path.normcase(str(path))
+        key = os.path.normcase(str(path.expanduser().resolve(strict=False)))
         if key not in seen:
             seen.add(key)
             result.append(path)
@@ -38,13 +39,14 @@ def _cubemx_candidates(settings: Settings, system_name: str) -> list[Path]:
         )
     elif system_name == "Darwin":
         app_roots = [
+            Path("/Applications/STMicroelectronics/STM32CubeMX.app"),
             Path("/Applications/STMicroelectronics/STM32Cube/STM32CubeMX/STM32CubeMX.app"),
+            Path("/Applications/STMicroelectronics/STM32CubeMX/STM32CubeMX.app"),
             Path("/Applications/STM32CubeMX.app"),
             Path.home() / "Applications/STM32CubeMX.app",
         ]
         for app_root in app_roots:
             candidates.append(app_root / "Contents/MacOS/STM32CubeMX")
-            candidates.append(app_root / "Contents/MacOs/STM32CubeMX")
 
     path_match = shutil.which("STM32CubeMX") or shutil.which("stm32cubemx")
     if path_match:
@@ -81,6 +83,25 @@ def _version_from_path(path: Path) -> str | None:
     return match.group(1) if match else None
 
 
+def _version_from_macos_bundle(path: Path) -> str | None:
+    app_root = next((parent for parent in (path, *path.parents) if parent.suffix == ".app"), None)
+    if app_root is None:
+        return None
+
+    info_path = app_root / "Contents" / "Info.plist"
+    try:
+        with info_path.open("rb") as info_file:
+            info = plistlib.load(info_file)
+    except (OSError, plistlib.InvalidFileException):
+        return None
+
+    for key in ("CFBundleShortVersionString", "CFBundleVersion"):
+        value = info.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
 def _cubemx_info(path: Path, system_name: str) -> ExecutableInfo:
     if system_name == "Windows":
         java = path.parent / "jre" / "bin" / "java.exe"
@@ -91,7 +112,8 @@ def _cubemx_info(path: Path, system_name: str) -> ExecutableInfo:
         name="STM32CubeMX",
         available=True,
         path=str(path),
-        version=_version_from_path(path),
+        version=_version_from_path(path)
+        or (_version_from_macos_bundle(path) if system_name == "Darwin" else None),
         invocation_prefix=invocation,
     )
 
