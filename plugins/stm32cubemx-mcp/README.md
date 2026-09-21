@@ -73,9 +73,13 @@ For a new project, `output_directory` identifies the complete generated
 container. `project_path` identifies the Eclipse project root. Codex must check
 the `succeeded` value and diagnostics before it reports generation success.
 
-The current plugin can preview regeneration of an existing STM32CubeIDE
-project. The preview uses an isolated validation directory. It cannot apply
-that regeneration plan yet.
+Use `cubemx_plan_regeneration` to preview an existing STM32CubeIDE project.
+After approval, call `cubemx_apply_regeneration` with the same request and the
+expected plan, source-manifest, and planned-manifest identifiers. The apply tool
+checks the exact output, backs up changed files, and updates the project.
+Check `succeeded` and report `backup_path`. If `recovery_required` is true,
+review the reported paths and backups before another apply. Stop external
+project writers during apply.
 
 ## Status
 

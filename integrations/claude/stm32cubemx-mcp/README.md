@@ -29,8 +29,13 @@ Use `/mcp` to confirm that the `stm32cubemx` server is connected. Use
 Ask Claude to inspect the environment and the IOC file before it plans a
 change. Review each plan before you permit an apply or generation tool.
 
-The current plugin can preview regeneration of an existing STM32CubeIDE
-project. It cannot apply that regeneration plan yet.
+Use `cubemx_plan_regeneration` to preview an existing STM32CubeIDE project.
+After approval, call `cubemx_apply_regeneration` with the same request and the
+expected plan, source-manifest, and planned-manifest identifiers. The apply tool
+checks the exact output, backs up changed files, and updates the project.
+Check `succeeded` and report `backup_path`. If `recovery_required` is true,
+review the reported paths and backups before another apply. Stop external
+project writers during apply.
 
 ## Status
 

@@ -105,6 +105,8 @@ def snapshot_project(root: Path, settings: Settings) -> dict[str, FileState]:
         child_directories[:] = kept_directories
 
         for name in file_names:
+            if _ignored_directory(name):
+                continue
             path = directory / name
             if path.is_symlink() or _is_reparse_point(path):
                 raise ValueError(f"Project file is a link or reparse point: {path}")

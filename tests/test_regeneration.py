@@ -372,3 +372,83 @@ def test_apply_refuses_linked_backup_directory(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="cannot be a link"):
         apply_project_regeneration(request, settings)
     assert not list(outside.iterdir())
+
+
+def test_apply_preserves_git_worktree_metadata_file(tmp_path: Path) -> None:
+    project = _cubeide_project(tmp_path)
+    settings = Settings(allowed_roots=(tmp_path,))
+    (project / ".git").write_text("gitdir: /unchanged/worktree/metadata\n")
+    request = _approved_request(project, settings)
+    result = apply_project_regeneration(
+        request, settings, validator=_valid_validator, script_runner=_regeneration_runner
+    )
+    assert result.succeeded
+    assert (project / ".git").read_text() == "gitdir: /unchanged/worktree/metadata\n"
+
+
+def test_final_manifest_mismatch_restores_deletions_and_preserves_external_work(
+    tmp_path: Path, monkeypatch
+) -> None:
+    from stm32cubemx_mcp import regeneration_apply
+
+    project = _cubeide_project(tmp_path)
+    settings = Settings(allowed_roots=(tmp_path,))
+    request = _approved_request(project, settings)
+    before = snapshot_project(project, settings)
+    replace = regeneration_apply._replace_file
+
+    def replace_and_add_external_work(source, target):
+        replace(source, target)
+        if target.name == "main.c" and "files" not in source.parts:
+            (project / "external.txt").write_text("preserve external work")
+
+    monkeypatch.setattr(regeneration_apply, "_replace_file", replace_and_add_external_work)
+    result = apply_project_regeneration(
+        request, settings, validator=_valid_validator, script_runner=_regeneration_runner
+    )
+    assert not result.succeeded and result.rolled_back
+    assert "applied project hash" in result.diagnostics[-1].message
+    after = snapshot_project(project, settings)
+    assert after.pop("external.txt")
+    assert after == before
+    assert (project / "external.txt").read_text() == "preserve external work"
+
+
+def test_apply_refuses_file_directory_type_changes_before_any_writes(tmp_path: Path) -> None:
+    project = _cubeide_project(tmp_path)
+    settings = Settings(allowed_roots=(tmp_path,))
+
+    def change_type_runner(*args):
+        result = _regeneration_runner(*args)
+        stage = next(args[2].iterdir())
+        main = stage / "Core/Src/main.c"
+        main.unlink()
+        main.mkdir()
+        (main / "new.c").write_text("new file")
+        return result
+
+    request = _approved_request(project, settings, change_type_runner)
+    before = snapshot_project(project, settings)
+    with pytest.raises(ValueError, match="parent is not a directory"):
+        apply_project_regeneration(
+            request, settings, validator=_valid_validator, script_runner=change_type_runner
+        )
+    assert snapshot_project(project, settings) == before
+    assert not list(project.glob(".cubemx-mcp-regeneration/backup-*"))
+
+
+def test_apply_rejects_failed_generation_without_source_changes(tmp_path: Path) -> None:
+    project = _cubeide_project(tmp_path)
+    settings = Settings(allowed_roots=(tmp_path,))
+    request = _approved_request(project, settings)
+    before = snapshot_project(project, settings)
+
+    def failed_runner(*args):
+        return CubeMXProcessResult(succeeded=False, exit_code=1, duration_seconds=0.01)
+
+    result = apply_project_regeneration(
+        request, settings, validator=_valid_validator, script_runner=failed_runner
+    )
+    assert not result.succeeded
+    assert snapshot_project(project, settings) == before
+    assert result.backup_path is None

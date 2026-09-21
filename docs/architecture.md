@@ -112,7 +112,7 @@ scan source -> copy project -> validate an isolated IOC copy
             -> confirm source did not change -> return plan -> remove copy
 ```
 
-The tool does not copy build-output directories or Git metadata. It rejects
+The tool does not copy build-output directories, Git metadata, or regeneration state. It rejects
 symbolic links and Windows reparse points. It also applies configurable file
 count and project size limits. A source-change diagnostic identifies each
 added, modified, or deleted path.
@@ -121,6 +121,29 @@ CubeMX appends the internal project name to its project path. The preview
 therefore stages the project below a temporary parent and passes the parent to
 CubeMX. This layout regenerates the staged project root. It does not create a
 second nested project.
+
+## Existing-project regeneration apply
+
+`cubemx_apply_regeneration` accepts the same preview request and its plan,
+source-manifest, and planned-manifest identifiers. It checks the source before
+running CubeMX. It recreates the staged output through the preview code and
+requires all identifiers to match. The copied output must also match the
+planned manifest.
+
+Apply checks each destination path and rejects file/directory type changes.
+It backs up changed original files and records the request and changes in
+`transaction.json`. It checks the source again after backup. It then updates
+only the approved added, modified, and deleted files. Replacement uses a
+flushed temporary file on the destination filesystem. A final manifest check
+must match the approved output.
+
+Backups and an exclusive apply lock live in `.cubemx-mcp-regeneration`. Project
+manifests exclude this state directory. The lock coordinates this tool only.
+External writers must stop during apply. The project update is not atomic as a
+whole. A handled file-operation failure triggers rollback. Rollback restores
+only paths that still match the attempted output. It preserves conflicting
+external edits and returns recovery diagnostics. A process termination requires
+manual recovery from the transaction record and backups.
 
 ## Path and process safety
 
@@ -148,6 +171,7 @@ Implemented foundation:
 - `cubemx_create_ioc(request)`
 - `cubemx_generate_project(request)`
 - `cubemx_plan_regeneration(request)`
+- `cubemx_apply_regeneration(request)`
 
 Planned configuration and execution tools:
 
