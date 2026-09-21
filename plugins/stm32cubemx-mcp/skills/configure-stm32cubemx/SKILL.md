@@ -1,6 +1,6 @@
 ---
 name: configure-stm32cubemx
-description: Create, inspect, plan, validate, and generate STM32CubeMX IOC and STM32CubeIDE projects through the stm32cubemx Model Context Protocol (MCP) tools. Use for new board or microcontroller unit (MCU) IOC files, STM32 .ioc settings, pin assignments, peripherals, clocks, project settings, CubeMX validation, new CubeIDE generation, or existing-project regeneration previews.
+description: Create, inspect, plan, validate, and generate STM32CubeMX IOC and STM32CubeIDE projects through the stm32cubemx Model Context Protocol (MCP) tools. Use for new board or microcontroller unit (MCU) IOC files, STM32 .ioc settings, pin assignments, peripherals, clocks, project settings, CubeMX validation, new CubeIDE generation, or existing-project regeneration.
 ---
 
 # Configure STM32CubeMX
@@ -29,9 +29,15 @@ structured tool call.
    plan. Keep CubeMX validation enabled. Do not set `skip_cubemx_validation`
    unless the user explicitly requests the bypass and accepts the risk.
 8. Use `cubemx_generate_project` only for a new output directory. Use
-   `cubemx_plan_regeneration` for an existing STM32CubeIDE project.
+   `cubemx_plan_regeneration` for an existing STM32CubeIDE project. Show its
+   file changes before apply. Use only a successful preview. After approval,
+   call `cubemx_apply_regeneration` with the same `plan_request` and the exact
+   `expected_plan_id`, `expected_source_manifest_sha256`, and
+   `expected_planned_manifest_sha256` from that preview. Existing authorization
+   for the exact plan is sufficient.
 9. Check `succeeded` before you report a completed generation or regeneration
-   preview. Report all warning and error diagnostics.
+   operation. Report all warning and error diagnostics. Report the backup path
+   after apply. Stop if `recovery_required` is true.
 10. Treat `output_directory` as the complete generated container. Treat
     `project_path` as the Eclipse project root. Do not assume that these paths
     are equal.
@@ -44,8 +50,11 @@ structured tool call.
 - Stop if the source hash changes after the preview.
 - Treat IOC validation, project generation, and compilation as different
   results.
-- Do not state that an existing project was regenerated. The current tool only
-  previews existing-project regeneration.
+- Report an existing project as regenerated only after a successful apply.
+- Stop external project writers during apply. The complete project update is
+  not atomic. Preserve backups for recovery.
+- If apply rejects changed output or source content, create a new preview.
+  Do not substitute new expected hashes into the old approval.
 - Do not use `plan_id` when a regeneration result has `succeeded=false`.
 - Do not state that a project compiled. The MCP does not have a build tool yet.
 - Report CubeMX diagnostics. Do not replace an unresolved configuration with a
@@ -55,4 +64,5 @@ structured tool call.
 
 For a request such as "Configure USART2 on PA2 and PA3," inspect the IOC, plan
 the peripheral and pin changes, show the plan, apply the approved plan, and
-then generate a new project or preview regeneration of the existing project.
+then generate a new project or preview and apply regeneration of the existing
+project.

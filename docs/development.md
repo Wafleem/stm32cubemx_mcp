@@ -26,8 +26,11 @@ firmware package. They operate only in a temporary directory and check:
 1. load a known STM32F4 fixture;
 2. save it through CubeMX;
 3. compare the semantic before/after state;
-4. generate STM32CubeIDE or CMake output;
-5. verify expected generated artifacts.
+4. generate STM32CubeIDE output;
+5. verify expected generated artifacts;
+6. preview regeneration without source changes;
+7. restore a missing generated header through approved regeneration apply;
+8. confirm that a CubeMX user-code marker remains.
 
 They are opt-in locally and should run on a controlled self-hosted CI runner,
 because STM32 packages are large and installation/licensing must remain outside
@@ -40,9 +43,11 @@ $env:CUBEMX_MCP_RUN_INTEGRATION = "1"
 pytest tests/integration/test_real_cubemx.py -m integration
 ```
 
-### Build tests
+### Planned build tests
 
-Generated STM32CubeIDE projects are built through the IDE's headless interface.
+Build tools and these tests are not implemented yet.
+
+Generated STM32CubeIDE projects will be built through the IDE's headless interface.
 CMake projects use configure/build presets and a discovered ARM toolchain. Test
 success requires both a zero exit code and expected ELF/map artifacts.
 

@@ -11,9 +11,11 @@ from stm32cubemx_mcp.ioc import inspect_ioc
 from stm32cubemx_mcp.models import (
     IocCreateRequest,
     ProjectGenerationRequest,
+    RegenerationApplyRequest,
     RegenerationPlanRequest,
 )
 from stm32cubemx_mcp.regeneration import plan_project_regeneration, snapshot_project
+from stm32cubemx_mcp.regeneration_apply import apply_project_regeneration
 from stm32cubemx_mcp.settings import Settings
 
 pytestmark = [
@@ -100,3 +102,35 @@ def test_create_and_validate_nucleo_f401re_ioc(tmp_path: Path) -> None:
     assert snapshot_project(project_root, generation_settings) == source_before
     assert not (project_root / "roundtrip" / "roundtrip.ioc").exists()
     assert not list(tmp_path.glob(".*-regeneration-*"))
+
+    # Restore a missing generated header while preserving CubeMX user code.
+    main = next(project_root.rglob("main.c"))
+    marker = "/* USER CODE BEGIN 0 */"
+    content = main.read_text(encoding="utf-8")
+    assert marker in content
+    main.write_text(
+        content.replace(marker, marker + "\n/* regeneration integration marker */"),
+        encoding="utf-8",
+    )
+    header = next(project_root.rglob("main.h"))
+    relative_header = header.relative_to(project_root).as_posix()
+    header.unlink()
+    request = RegenerationPlanRequest(project_directory=str(project_root))
+    approved = plan_project_regeneration(request, generation_settings)
+    assert approved.succeeded, approved.diagnostics
+    assert any(item.path == relative_header and item.change == "added" for item in approved.changes)
+    applied = apply_project_regeneration(
+        RegenerationApplyRequest(
+            plan_request=request,
+            expected_plan_id=approved.plan_id,
+            expected_source_manifest_sha256=approved.source_manifest_sha256,
+            expected_planned_manifest_sha256=approved.planned_manifest_sha256,
+        ),
+        generation_settings,
+    )
+    assert applied.succeeded, applied.diagnostics
+    assert applied.changed
+    assert applied.applied_manifest_sha256 == approved.planned_manifest_sha256
+    assert header.is_file()
+    assert "/* regeneration integration marker */" in main.read_text(encoding="utf-8")
+    assert Path(applied.backup_path).is_dir()

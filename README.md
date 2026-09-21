@@ -31,7 +31,7 @@ Use case | Current support | Safety behavior
 Create a new IOC file | Select a board or microcontroller unit (MCU), project name, and toolchain. | Uses a new directory and validates the IOC file with CubeMX.
 Edit an existing IOC file | Change pins, signals, labels, peripherals, known parameters, project name, or toolchain. | Shows a plan and source hash before it changes the file. It creates a backup before replacement.
 Generate a new project | Generate a complete STM32CubeIDE project from an IOC file. | Uses a temporary directory. It publishes the output only after validation.
-Preview existing-project regeneration | Compare a regenerated copy with the source STM32CubeIDE project. | Reports file differences. It does not change the source project.
+Regenerate an existing project | Preview changes, then apply the approved plan. | Checks source and output hashes. Backs up changed files and rolls back handled failures.
 
 The server does not edit arbitrary C or C++ application code. It does not
 compile, flash, or debug a project.
@@ -99,6 +99,7 @@ Tool | Purpose | File effect
 `cubemx_create_ioc` | Create and validate one IOC file for a board or MCU. | Creates one new directory
 `cubemx_generate_project` | Generate one new STM32CubeIDE project. | Creates one new output container
 `cubemx_plan_regeneration` | Regenerate a temporary copy of an existing CubeIDE project. | Source project remains unchanged
+`cubemx_apply_regeneration` | Apply the exact approved regeneration changes. | Backs up and updates changed project files
 
 ## Intended workflow
 
@@ -378,9 +379,39 @@ The preview stages the project below a temporary generation parent. It passes
 that parent to CubeMX. This layout prevents CubeMX from creating a second
 nested copy of the project.
 
-The current server does not apply an existing-project regeneration plan. It
-also does not compile a project. Treat IOC validation, project generation, and
-compilation as different results.
+Use `cubemx_apply_regeneration` after review of a successful preview. Pass the
+same plan request, `plan_id`, `source_manifest_sha256`, and
+`planned_manifest_sha256` in the corresponding expected fields. The tool
+regenerates a temporary copy again. It stops if either the source or the new
+output differs from the approved plan. Create a new preview when CubeMX output
+changes between runs. The tool does not silently accept a different output.
+
+The tool backs up changed source files inside
+`.cubemx-mcp-regeneration/backup-*` in the project. Each backup contains original
+files under `files/` and a `transaction.json` file with the approved request and
+file hashes. Added files have no original backup. Keep these backups until you
+verify the result. The tool preserves Git metadata, build output, and other
+files outside the approved changes. A plan with no changes succeeds without a
+backup.
+
+Each file replacement is atomic. The complete project update is not atomic.
+Close editors that write project files and stop builds during apply. A lock
+prevents two cooperating regeneration apply calls. It does not lock external
+editors. Source checks detect changes before and during apply. On a handled
+write failure, the tool restores files that still match its own output. It
+preserves conflicting external edits and reports `recovery_required=true`.
+Review the reported paths and backup before manual recovery. Empty directories
+created during a failed apply can remain. File/directory type changes are
+rejected before writes.
+
+If the process terminates during apply, inspect the backup transaction and
+current file hashes before recovery. An interrupted call can leave
+`.cubemx-mcp-regeneration/apply.lock`. Confirm that its process is no longer
+running before removing the stale lock. Do not delete backups to clear a lock.
+The state directory is excluded from project manifests and previews.
+
+The server does not compile a project. Treat IOC validation, project generation,
+and compilation as different results.
 
 ### 6. Use allowed roots
 
@@ -621,6 +652,32 @@ project-manifest hashes, file changes, IOC validation, the CubeMX process
 result, and diagnostics. Check `succeeded` before you use `plan_id` or
 `planned_manifest_sha256`. These fields can be null when a safe preview does
 not complete. A source-change diagnostic identifies each detected path.
+
+#### `cubemx_apply_regeneration`
+
+The tool has one `request` argument:
+
+```json
+{
+  "request": {
+    "plan_request": {
+      "project_directory": "existing-project",
+      "ioc_path": null
+    },
+    "expected_plan_id": "<plan_id from the approved preview>",
+    "expected_source_manifest_sha256": "<source_manifest_sha256 from the preview>",
+    "expected_planned_manifest_sha256": "<planned_manifest_sha256 from the preview>"
+  }
+}
+```
+
+Use only a preview with `succeeded=true`. Check `succeeded` in the apply result.
+The result includes `changed`, `applied_manifest_sha256`, `backup_path`,
+`rolled_back`, `recovery_required`, file changes, and validation diagnostics.
+On a handled failure, `rolled_back=true` means the attempted file changes were
+restored or already matched their original content. It does not mean that
+unrelated external changes were removed. When `recovery_required=true`, stop and
+review the backup before another apply.
 
 ### JSON-RPC call form
 

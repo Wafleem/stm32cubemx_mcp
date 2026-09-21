@@ -233,3 +233,26 @@ class RegenerationPlanResult(BaseModel):
     validation: IocValidationResult | None = None
     cubemx: CubeMXProcessResult | None = None
     diagnostics: list[Diagnostic] = Field(default_factory=list)
+
+
+class RegenerationApplyRequest(BaseModel):
+    plan_request: RegenerationPlanRequest
+    expected_plan_id: str = Field(pattern=r"^[0-9a-f]{20}$")
+    expected_source_manifest_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    expected_planned_manifest_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
+class RegenerationApplyResult(BaseModel):
+    succeeded: bool
+    changed: bool = False
+    project_path: str
+    plan_id: str | None = None
+    source_manifest_sha256: str
+    applied_manifest_sha256: str | None = None
+    backup_path: str | None = None
+    rolled_back: bool = False
+    recovery_required: bool = False
+    changes: list[ProjectFileChange] = Field(default_factory=list)
+    validation: IocValidationResult | None = None
+    cubemx: CubeMXProcessResult | None = None
+    diagnostics: list[Diagnostic] = Field(default_factory=list)
