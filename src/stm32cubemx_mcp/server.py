@@ -21,11 +21,14 @@ from stm32cubemx_mcp.models import (
     IocValidationResult,
     ProjectGenerationRequest,
     ProjectGenerationResult,
+    RegenerationApplyRequest,
+    RegenerationApplyResult,
     RegenerationPlanRequest,
     RegenerationPlanResult,
 )
 from stm32cubemx_mcp.planning import plan_ioc_changes
 from stm32cubemx_mcp.regeneration import plan_project_regeneration
+from stm32cubemx_mcp.regeneration_apply import apply_project_regeneration
 from stm32cubemx_mcp.settings import Settings
 
 mcp = MCPServer(
@@ -101,6 +104,12 @@ def cubemx_plan_regeneration(
 ) -> RegenerationPlanResult:
     """Regenerate a temporary project copy. Return a read-only file change plan."""
     return plan_project_regeneration(request, _settings())
+
+
+@mcp.tool()
+def cubemx_apply_regeneration(request: RegenerationApplyRequest) -> RegenerationApplyResult:
+    """Apply an approved regeneration plan to an existing project with file backups."""
+    return apply_project_regeneration(request, _settings())
 
 
 def main() -> None:

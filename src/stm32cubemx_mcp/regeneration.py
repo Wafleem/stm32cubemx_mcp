@@ -34,7 +34,16 @@ from stm32cubemx_mcp.models import (
 )
 from stm32cubemx_mcp.settings import Settings
 
-_IGNORED_DIRECTORIES = {".git", ".venv", "Debug", "Release", "build", "dist"}
+REGENERATION_STATE_DIRECTORY = ".cubemx-mcp-regeneration"
+_IGNORED_DIRECTORIES = {
+    ".git",
+    ".venv",
+    "Debug",
+    "Release",
+    "build",
+    "dist",
+    REGENERATION_STATE_DIRECTORY,
+}
 _TEXT_NAMES = {"CMakeLists.txt", "Makefile"}
 _TEXT_SUFFIXES = {
     ".c",
@@ -255,12 +264,13 @@ def _select_ioc(
     return candidates[0]
 
 
-def plan_project_regeneration(
+def _plan_project_regeneration(
     request: RegenerationPlanRequest,
     settings: Settings,
     *,
     validator: ContentValidator = validate_ioc_content,
     script_runner: ScriptRunner = run_cubemx_script,
+    staged_output: Path | None = None,
 ) -> RegenerationPlanResult:
     """Regenerate a staged project copy and return a read-only file plan."""
     project = settings.resolve_allowed_path(request.project_directory)
@@ -399,6 +409,8 @@ def plan_project_regeneration(
                 process=process,
             )
         changes = _project_changes(project, stage, before, after)
+        if staged_output is not None:
+            shutil.copytree(stage, staged_output, ignore=_copy_ignore)
 
     plan_data = {
         "project": str(project),
@@ -427,4 +439,17 @@ def plan_project_regeneration(
                 message="This regeneration plan did not change the source project.",
             ),
         ],
+    )
+
+
+def plan_project_regeneration(
+    request: RegenerationPlanRequest,
+    settings: Settings,
+    *,
+    validator: ContentValidator = validate_ioc_content,
+    script_runner: ScriptRunner = run_cubemx_script,
+) -> RegenerationPlanResult:
+    """Regenerate a temporary copy and return a read-only change plan."""
+    return _plan_project_regeneration(
+        request, settings, validator=validator, script_runner=script_runner
     )
