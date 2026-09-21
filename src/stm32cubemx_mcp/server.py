@@ -7,7 +7,7 @@ from stm32cubemx_mcp.creation import create_ioc
 from stm32cubemx_mcp.cubemx import validate_ioc_file
 from stm32cubemx_mcp.discovery import discover_environment
 from stm32cubemx_mcp.generation import generate_project
-from stm32cubemx_mcp.ioc import inspect_ioc, list_ioc_files
+from stm32cubemx_mcp.ioc import inspect_ioc
 from stm32cubemx_mcp.models import (
     EnvironmentReport,
     IocApplyRequest,
@@ -16,7 +16,6 @@ from stm32cubemx_mcp.models import (
     IocCreateRequest,
     IocCreateResult,
     IocInspection,
-    IocListResult,
     IocPlanRequest,
     IocValidationResult,
     ProjectGenerationRequest,
@@ -50,16 +49,6 @@ def _settings() -> Settings:
 def cubemx_environment() -> EnvironmentReport:
     """Discover local STM32CubeMX, STM32CubeIDE, CMake, and related runtime state."""
     return discover_environment(_settings())
-
-
-@mcp.tool()
-def cubemx_list_ioc(
-    root: str = ".",
-    recursive: bool = True,
-    limit: int = 100,
-) -> IocListResult:
-    """List IOC files below an allowed project directory without modifying them."""
-    return list_ioc_files(root, _settings(), recursive=recursive, limit=limit)
 
 
 @mcp.tool()
