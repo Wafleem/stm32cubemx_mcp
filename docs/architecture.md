@@ -163,7 +163,6 @@ manual recovery from the transaction record and backups.
 Implemented foundation:
 
 - `cubemx_environment()`
-- `cubemx_list_ioc(root, recursive, limit)`
 - `cubemx_inspect_ioc(path)`
 - `cubemx_plan_ioc_changes(request)`
 - `cubemx_apply_ioc_changes(request)`

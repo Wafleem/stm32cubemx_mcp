@@ -15,8 +15,8 @@ structured tool call.
    allowed roots.
 2. Call `cubemx_create_ioc` for a new board or MCU configuration. Use the
    exact CubeMX identifier. Use only a new output directory.
-3. Call `cubemx_list_ioc` when an existing IOC path is not known. Call
-   `cubemx_inspect_ioc` before you plan a change to an existing IOC file.
+3. Find an existing IOC file with the host filesystem tools, or ask the user
+   for its path. Call `cubemx_inspect_ioc` before you plan a change to that file.
 4. Resolve the requested MCU functions and pins from the available technical
    evidence. Do not state that the MCP read a datasheet or schematic.
 5. Call `cubemx_plan_ioc_changes`. Use `pin_assignments` and

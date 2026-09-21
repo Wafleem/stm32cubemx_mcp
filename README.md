@@ -91,7 +91,6 @@ inspect -> plan -> show difference and source hash -> get approval
 Tool | Purpose | File effect
 --- | --- | ---
 `cubemx_environment` | Find CubeMX, CubeIDE, Python, CMake, and Ninja. | Read-only
-`cubemx_list_ioc` | Find IOC files below an allowed directory. | Read-only
 `cubemx_inspect_ioc` | Read MCU, project, peripheral, pin, clock, and version data. | Read-only
 `cubemx_plan_ioc_changes` | Preview pin, peripheral, parameter, and project changes. | Read-only
 `cubemx_apply_ioc_changes` | Validate and apply an approved IOC plan. | Creates a backup and replaces one IOC file
@@ -308,8 +307,8 @@ known board or microcontroller unit (MCU). It selects the project name,
 toolchain, and a new output directory. The server uses typed CubeMX commands.
 It validates the new IOC file before it makes the output directory available.
 
-For an existing project, Codex can call `cubemx_list_ioc` if the IOC path is
-not known. It then calls `cubemx_inspect_ioc` to read the current project
+For an existing project, find the IOC path with the host filesystem tools or
+ask the user for the path. Call `cubemx_inspect_ioc` to read the current project
 state.
 
 The inspection result includes the source SHA-256 hash. This hash identifies
@@ -457,22 +456,6 @@ Arguments:
 Main result fields: `operating_system`, `architecture`, `python_version`,
 `python_executable`, `cubemx`, `cubeide`, `cmake`, `ninja`, `allowed_roots`, and
 `diagnostics`.
-
-#### `cubemx_list_ioc`
-
-Arguments:
-
-```json
-{
-  "root": ".",
-  "recursive": true,
-  "limit": 100
-}
-```
-
-`root` defaults to the current directory. `recursive` defaults to `true`.
-`limit` defaults to `100`. The result contains `root`, `files`, and
-`truncated`.
 
 #### `cubemx_inspect_ioc`
 
