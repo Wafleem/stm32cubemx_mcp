@@ -179,13 +179,14 @@ def test_apply_regeneration_updates_files_and_preserves_unrelated_content(tmp_pa
     main.chmod(0o640)
     original_mode = main.stat().st_mode & 0o777
     original = main.read_bytes()
+    original_text = main.read_text(encoding="utf-8")
     request = _approved_request(project, settings)
     result = apply_project_regeneration(
         request, settings, validator=_valid_validator, script_runner=_regeneration_runner
     )
     assert result.succeeded and result.changed
     assert result.applied_manifest_sha256 == request.expected_planned_manifest_sha256
-    assert main.read_bytes() == original + b"// regenerated\n"
+    assert main.read_text(encoding="utf-8") == original_text + "// regenerated\n"
     assert main.stat().st_mode & 0o777 == original_mode
     assert (project / "Core/Src/gpio.c").is_file()
     assert not (project / "Core/Src/obsolete.c").exists()
